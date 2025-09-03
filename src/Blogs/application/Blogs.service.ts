@@ -1,5 +1,5 @@
 import {BlogDTO} from "../dto/BlogModelDTO";
-import {Blog} from "../models/BlogModel";
+import {Blog, BlogInputModel} from "../models/BlogModel";
 import {WithId} from "mongodb";
 import {blogRepository} from "../repository/BlogRepository";
 
@@ -12,7 +12,7 @@ export const BlogsService = {
     },
 
 
-    async create(dto: BlogDTO): Promise<string> {
+    async create(dto: BlogInputModel): Promise<string> {
         const newBlog: Blog = {
                 name: dto.name,
                 description: dto.description,
