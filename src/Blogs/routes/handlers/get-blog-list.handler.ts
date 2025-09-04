@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
 import {blogRepository} from "../../repository/BlogRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import { mapToBlogDto } from '../routers/mappers/Map-to-blog-dto';
-import {Blog} from "../BlogModel";
+import { mapToBlogDto } from '../mappers/Map-to-blog-dto';
+import {Blog} from "../../domain/BlogModel";
 import {WithId} from "mongodb";
 
 

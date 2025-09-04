@@ -1,7 +1,7 @@
 import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {postRepository} from "../../repository/PostRepository";
-import {createErrorsMessages} from "../../../Blogs/dto/FieldError";
+import {createErrorsMessages} from "../../../core/errors/FieldError";
 
 export async function deletePostHandler(req: Request, res: Response) {
 

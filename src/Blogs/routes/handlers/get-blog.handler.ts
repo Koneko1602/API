@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import { createErrorsMessages } from "../../dto/FieldError";
+import { createErrorsMessages } from "../../../core/errors/FieldError";
 import {blogRepository} from "../../repository/BlogRepository";
-import {mapToBlogDto} from "../routers/mappers/Map-to-blog-dto";
+import {mapToBlogDto} from "../mappers/Map-to-blog-dto";
 
 export async function getBlogHandler (req: Request, res: Response) {
     try{

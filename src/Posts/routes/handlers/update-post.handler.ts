@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {postRepository} from "../../repository/PostRepository";
-import {createErrorsMessages} from "../../../Blogs/dto/FieldError";
-import {PostInputModel} from "../PostModel";
+import {createErrorsMessages} from "../../../core/errors/FieldError";
+import {PostInputModel} from "../../domain/PostModel";
 
 
 export async function updatePostHandler (

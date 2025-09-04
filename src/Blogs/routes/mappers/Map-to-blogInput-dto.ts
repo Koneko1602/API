@@ -1,4 +1,4 @@
-import {Blog, BlogInputModel} from "../../BlogModel";
+import {Blog, BlogInputModel} from "../../domain/BlogModel";
 
 
 export const mapInputToBlog = (input: BlogInputModel): Blog => ({

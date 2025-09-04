@@ -1,5 +1,5 @@
 import {BlogDTO} from "../dto/BlogModelDTO";
-import {Blog, BlogInputModel} from "../models/BlogModel";
+import {Blog, BlogInputModel} from "../domain/BlogModel";
 import {WithId} from "mongodb";
 import {blogRepository} from "../repository/BlogRepository";
 

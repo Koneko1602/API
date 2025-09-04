@@ -1,11 +1,11 @@
 import { Request, Response} from "express";
-import {Blog, BlogInputModel} from "../BlogModel";
+import {Blog, BlogInputModel} from "../../domain/BlogModel";
 import {blogRepository} from "../../repository/BlogRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {mapToBlogDto} from "../routers/mappers/Map-to-blog-dto";
+import {mapToBlogDto} from "../mappers/Map-to-blog-dto";
 import {BlogsService} from "../../application/Blogs.service";
 import {BlogDTO} from "../../dto/BlogModelDTO";
-import {mapInputToBlog} from "../routers/mappers/Map-to-blogInput-dto";
+import {mapInputToBlog} from "../mappers/Map-to-blogInput-dto";
 
 
 export async function createBlogHandler(

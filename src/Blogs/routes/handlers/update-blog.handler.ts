@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
-import { createErrorsMessages } from "../../dto/FieldError";
+import { createErrorsMessages } from "../../../core/errors/FieldError";
 import {blogRepository} from "../../repository/BlogRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {BlogInputModel} from "../BlogModel";
+import {BlogInputModel} from "../../domain/BlogModel";
 
 
 export async function updateBlogHandler (
