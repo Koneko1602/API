@@ -5,13 +5,16 @@ import {blogRepository} from "../repository/BlogRepository";
 
 
 export const BlogsService = {
-    async findAll(
+    async findMany(
         queryDto: BlogDTO,
     ): Promise<{ items: WithId<Blog>[]; totalCount: number }> {
-        return blogRepository.findAll(queryDto);
+        return blogRepository.findMany(queryDto);
     },
 
+    async findByIdOrFail(id:string): Promise<WithId<Blog>> {
 
+        return blogRepository.findByIdOrFail(id);
+    },
     async create(dto: BlogInputModel): Promise<string> {
         const newBlog: Blog = {
                 name: dto.name,

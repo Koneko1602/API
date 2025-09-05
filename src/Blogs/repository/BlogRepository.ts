@@ -1,10 +1,11 @@
 import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
 import {BlogsCollection} from "../../db/Mongo.db";
+import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
 
 
 export const blogRepository = {
-    async findAll():  Promise<WithId<Blog>[]>{
+    async findMany():  Promise<WithId<Blog>[]>{
         return BlogsCollection.find().toArray();
     },
     async findById(id: string): Promise<WithId<Blog> | null> {

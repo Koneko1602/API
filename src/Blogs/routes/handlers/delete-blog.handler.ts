@@ -1,33 +1,22 @@
 import { Request, Response} from "express";
-import { createErrorsMessages } from "../../../core/errors/FieldError";
-import {blogRepository} from "../../repository/BlogRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
+import {errorsHandler} from "../../../core/errors/errors.handler";
+import {BlogsService} from "../../application/Blogs.service";
 
-export async function deleteBlogHandler(req: Request, res: Response) {
+export async function deleteBlogHandler(
+    req: Request<{ id: string }>,
+    res: Response,
+) {
 
-try {
+    {
+        try {
+            const id = req.params.id;
 
-    const id = req.params.id;
-    const blog = await blogRepository.findById(id);
+            await BlogsService.delete(id);
 
-    if (!blog) {
-        res
-            .status(HttpStatus.NotFound)
-            .send(
-                createErrorsMessages([{field: 'id', message: ' Blog not found'}]),
-            );
-        return;
-    }
-    await blogRepository.delete(id);
-    res.sendStatus(HttpStatus.NoContent);
-    } catch (e: unknown) {
-        res.sendStatus(HttpStatus.InternalServerError)
+            res.sendStatus(HttpStatus.NoContent);
+        } catch (e: unknown) {
+            errorsHandler(e, res);
+        }
     }
 }
-
-
-
-
-
-
-
