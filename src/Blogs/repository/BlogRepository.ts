@@ -2,12 +2,31 @@ import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
 import {BlogsCollection} from "../../db/Mongo.db";
 import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
+import {BlogDTO} from "../dto/BlogModelDTO";
+import {BlogQueryInput} from "../routes/input/blog-query.input";
 
 
 export const blogRepository = {
-    async findMany():  Promise<WithId<Blog>[]>{
-        return BlogsCollection.find().toArray();
-    },
+    async findMany ( queryDto:BlogQueryInput,): Promise<{items: WithId<Blog>[]; totalCount: number}> {
+        const {
+            pageNumber,
+            pageSize,
+            sortBy,
+            sortDirection,
+            searchBlogNameTerm,
+            searchBlogDescriptionTerm,
+            searchCreatedAtTerm,
+
+        } = queryDto;
+
+        const skip = (pageNumber - 1) * pageSize;
+        const filter: any = {};
+
+        if (searchBlogNameTerm) {
+            filter.name = { $regex: searchBlogNameTerm, $options: 'i'}
+        };
+    }
+
     async findById(id: string): Promise<WithId<Blog> | null> {
         return BlogsCollection.findOne({ _id: new ObjectId(id)});
     },

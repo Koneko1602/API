@@ -10,9 +10,7 @@ export async function updateBlogHandler (
     res: Response,
 ){
     try {
-
         const id = req.params.id;
-        const blog = await blogRepository.findById(id);
 
         await blogRepository.update(id, req.body )
         res.sendStatus(HttpStatus.NoContent);
