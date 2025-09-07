@@ -1,14 +1,22 @@
-import {BlogInputModel, Blog} from "../models/BlogModel"
+import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
 import {BlogsCollection} from "../../db/Mongo.db";
+import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
 
 
 export const blogRepository = {
-    async findAll():  Promise<WithId<Blog>[]>{
+    async findMany():  Promise<WithId<Blog>[]>{
         return BlogsCollection.find().toArray();
     },
     async findById(id: string): Promise<WithId<Blog> | null> {
         return BlogsCollection.findOne({ _id: new ObjectId(id)});
+    },
+    async findByIdOrFail (id: string): Promise<WithId<Blog>> {
+        const res = await BlogsCollection.findOne({_id: new ObjectId(id)});
+        if (!res) {
+            throw new RepositoryNotFoundError('Blog not exist');
+        }
+        return res;
     },
 
     // Создать новый блог

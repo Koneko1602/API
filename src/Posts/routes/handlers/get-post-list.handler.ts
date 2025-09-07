@@ -1,7 +1,7 @@
 import { Request, Response} from "express";
 import {postRepository} from "../../repository/PostRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {MapToPostDto} from "../routers/mappers/mapToPostDto";
+import {MapToPostDto} from "../mappers/mapToPostDto";
 
 
 export async function getPostListHandler(req: Request, res: Response) {

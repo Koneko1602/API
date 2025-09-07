@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {postRepository} from "../../repository/PostRepository";
-import {createErrorsMessages} from "../../../Blogs/dto/FieldError";
-import {MapToPostDto} from "../routers/mappers/mapToPostDto";
+import {createErrorsMessages} from "../../../core/errors/FieldError";
+import {MapToPostDto} from "../mappers/mapToPostDto";
 
 export async function getPostHandler (req: Request, res: Response) {
     try{

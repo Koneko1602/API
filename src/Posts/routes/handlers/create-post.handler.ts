@@ -1,9 +1,9 @@
 import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {Post, PostInputModel} from "../PostModel";
+import {Post, PostInputModel} from "../../domain/PostModel";
 import {postRepository} from "../../repository/PostRepository";
 import { blogRepository } from "../../../Blogs/repository/BlogRepository";
-import {MapToPostDto} from "../routers/mappers/mapToPostDto";
+import {MapToPostDto} from "../mappers/mapToPostDto";
 
 
 
