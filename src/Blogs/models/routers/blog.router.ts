@@ -46,7 +46,6 @@ BlogRouter
 
     .delete('/:id',
         superAdminGuardMiddleware,
-
         idValidation,
         inputValidationResultMiddleware,
         deleteBlogHandler,
