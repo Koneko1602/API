@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
-import { createErrorsMessages } from "../../../core/errors/FieldError";
-import {blogRepository} from "../../repository/BlogRepository";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {BlogInputModel} from "../../domain/BlogModel";
+import {BlogsService} from "../../application/Blogs.service";
+
 
 
 export async function updateBlogHandler (
@@ -12,7 +12,7 @@ export async function updateBlogHandler (
     try {
         const id = req.params.id;
 
-        await blogRepository.update(id, req.body )
+        await BlogsService.update(id, req.body )
         res.sendStatus(HttpStatus.NoContent);
     } catch (e: unknown) {
         res.sendStatus(HttpStatus.InternalServerError);

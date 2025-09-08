@@ -24,8 +24,25 @@ export const blogRepository = {
 
         if (searchBlogNameTerm) {
             filter.name = { $regex: searchBlogNameTerm, $options: 'i'}
-        };
-    }
+        }
+        if (searchBlogDescriptionTerm) {
+            filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
+        }
+        if (searchCreatedAtTerm) {
+            filter.CreatedAt = {$regex:searchCreatedAtTerm, $options: 'i'}
+        }
+        const items = await BlogsCollection
+            .find(filter)
+            .sort({ [ sortBy ]: sortDirection})
+            .skip(skip)
+            .limit(pageSize)
+            .toArray();
+
+            const totalCount = await BlogsCollection.countDocuments(filter);
+
+            return { items, totalCount };
+    },
+
 
     async findById(id: string): Promise<WithId<Blog> | null> {
         return BlogsCollection.findOne({ _id: new ObjectId(id)});
@@ -39,9 +56,11 @@ export const blogRepository = {
     },
 
     // Создать новый блог
-    async create(newBlog: Blog): Promise<WithId<Blog>> {
+    async create(newBlog: Blog): Promise<string> {
         const insertResult= await BlogsCollection.insertOne(newBlog);
-        return { ...newBlog, _id: insertResult.insertedId};
+
+
+        return  insertResult.insertedId.toString();
     },
 
     // Обновить данные блога
@@ -60,7 +79,7 @@ export const blogRepository = {
         );
 
         if (updateResult.matchedCount < 1) {
-            throw new Error('Blog not exist');
+            throw new RepositoryNotFoundError ('Blog not exist');
         }
         return;
     },
@@ -73,7 +92,8 @@ export const blogRepository = {
         });
 
         if (deleteResult.deletedCount < 1) {
-            throw new Error('Blog not exist')
+            throw new RepositoryNotFoundError('Blog not exist')
         }
+        return ;
     },
 };
