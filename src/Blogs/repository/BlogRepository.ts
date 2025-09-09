@@ -2,7 +2,6 @@ import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
 import {BlogsCollection} from "../../db/Mongo.db";
 import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
-import {BlogDTO} from "../dto/BlogModelDTO";
 import {BlogQueryInput} from "../routes/input/blog-query.input";
 
 

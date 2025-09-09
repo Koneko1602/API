@@ -1,37 +1,26 @@
-import { Request, Response} from "express";
+import {Request,Response} from "express";
+import {PostInputModel} from "../../domain/PostModel";
+import {PostsService} from "../../application/Posts.service";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {Post, PostInputModel} from "../../domain/PostModel";
-import {postRepository} from "../../repository/PostRepository";
-import { blogRepository } from "../../../Blogs/repository/BlogRepository";
+import {errorsHandler} from "../../../core/errors/errors.handler";
 import {MapToPostDto} from "../mappers/mapToPostDto";
+import {mapInputToPost} from "../mappers/Map-to-postInput-dto";
 
-
-
-export  async function createPostHandler(
-    req: Request<{},{},PostInputModel>,
+export async function createPostHandler(
+    req: Request<{}, {}, PostInputModel>,
     res: Response,
-)  {
+) {
     try {
+        const post = mapInputToPost(req.body);
 
-        const blog= await blogRepository.findById(req.body.blogId);
-        if (!blog) {
-             res.status(HttpStatus.NotFound).send({ error: 'Blog not found' });
-             return;
-        }
-        const newPost: Post = {
-            title:req.body.title,
-            shortDescription: req.body.shortDescription,
-            content: req.body.content,
-            blogId: blog._id.toString(),
-            blogName: blog.name,
-            createdAt:new Date(),
+        const createdPostId = await PostsService.create(post);
+        const createdPost = await PostsService.findByIdOrFail(createdPostId);
 
-        };
-        const createdPost = await postRepository.create(newPost);
+        const blogDto = MapToPostDto(createdPost);
 
-        res.status(HttpStatus.Created).send(MapToPostDto(createdPost));
-    }
-    catch (e: unknown) {
-        res.sendStatus(HttpStatus.InternalServerError);
+        res.status(HttpStatus.Created).send(blogDto);
+    } catch (e: unknown) {
+        errorsHandler(e, res);
     }
 }
+
