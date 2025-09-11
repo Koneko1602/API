@@ -99,4 +99,24 @@ export const postRepository = {
         }
         return ;
     },
+    async findPostByBlog(
+        queryDto: PostQueryInput,
+        blogId: string,
+    ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
+        const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
+        const filter = { 'blog.id': blogId };
+        const skip = (pageNumber - 1) * pageSize;
+
+        const [items, totalCount] = await Promise.all([
+            PostsCollection
+                .find(filter)
+                .sort({ [sortBy]: sortDirection })
+                .skip(skip)
+                .limit(pageSize)
+                .toArray(),
+            PostsCollection.countDocuments(filter),
+        ]);
+        return { items, totalCount };
+    },
+
 };
