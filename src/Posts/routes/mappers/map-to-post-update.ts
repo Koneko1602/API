@@ -14,7 +14,7 @@ export function mapInputToPostDto(
         shortDescription: input.shortDescription,
         content:input.content,
         blogId:input.blogId,
+        blogName:existing.blogName,
         createdAt: existing.createdAt,
-        blogName:input.blogName,
     };
 }

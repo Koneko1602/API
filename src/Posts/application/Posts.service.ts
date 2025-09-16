@@ -3,6 +3,7 @@ import {Post, PostInputModel} from "../domain/PostModel";
 import {postRepository} from "../repository/PostRepository";
 import {WithId} from "mongodb";
 import {mapInputToPostDto} from "../routes/mappers/map-to-post-update";
+import {blogRepository} from "../../Blogs/repository/BlogRepository";
 
 
 export const PostsService = {
@@ -20,12 +21,14 @@ export const PostsService = {
     },
 
     async create(dto: PostInputModel): Promise<string> {
+        const blog = await blogRepository.findByIdOrFail(dto.blogId);
+
         const newPost: Post = {
             title: dto.title,
             shortDescription: dto.shortDescription,
             content: dto.content,
+            blogName:blog.name,
             blogId: dto.blogId,
-            blogName:dto.blogName,
             createdAt: new Date(),
 
 
