@@ -8,6 +8,13 @@ import {blogRepository} from "../../Blogs/repository/BlogRepository";
 
 export const PostsService = {
 
+    async findPostByBlog(
+        queryDto: PostQueryInput,
+        blogId: string,
+    ): Promise<{items:WithId<Post>[]; totalCount : number}> {
+        await blogRepository.findByIdOrFail(blogId);
+        return postRepository.findPostByBlog(queryDto,blogId);
+    },
 
     async findMany(
         queryDto: PostQueryInput,

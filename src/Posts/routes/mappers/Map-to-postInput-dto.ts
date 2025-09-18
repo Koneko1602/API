@@ -6,6 +6,5 @@ export const mapInputToPost = (input: PostInputModel): Post => ({
     shortDescription: input.shortDescription,
     content: input.content,
     createdAt: new Date(),
-    blogName:input.blogName,
     blogId:input.blogId,
 });

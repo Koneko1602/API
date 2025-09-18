@@ -9,12 +9,22 @@ import {deleteBlogHandler} from "./handlers/delete-blog.handler";
 import {superAdminGuardMiddleware} from "../../Authorization/super-admin.guard-middleware";
 import {Router} from "express";
 import {BlogInputDtoValidation} from "../validation/blog.input-dto.validation-middlewares";
+import {
+    paginationAndSortingValidation
+} from "../../core/Middlewares/validation/query-pagination-sorting.validation-middleware";
+import {BlogSortField} from "./input/blog-sort-field";
+import {getBlogPostListHandler} from "./handlers/get-blog-post-list.handler";
 
 
 export const BlogRouter = Router ({});
 
 BlogRouter
-    .get('', getBlogListHandler)
+    .get(
+        '',
+        paginationAndSortingValidation(BlogSortField),
+        inputValidationResultMiddleware,
+        getBlogListHandler,
+    )
 
     .get(
         '/:id',
@@ -50,4 +60,11 @@ BlogRouter
         inputValidationResultMiddleware,
         deleteBlogHandler,
 
+    )
+    .get(
+        '/:id/posts',
+        idValidation,
+        paginationAndSortingValidation(BlogSortField),
+        inputValidationResultMiddleware,
+        getBlogPostListHandler,
     );
