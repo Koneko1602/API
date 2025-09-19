@@ -3,29 +3,21 @@ import { Request, Response } from 'express';
 import {PostQueryInput} from "../../../Posts/routes/input/post-query.input";
 import {errorsHandler} from "../../../core/errors/errors.handler";
 import {mapToPostListPaginatedOutput} from "../../../Posts/routes/mappers/MapToPostListPaginatedOutput";
+import {PostInputModel} from "../../../Posts/domain/PostModel";
+import {HttpStatus} from "../../../core/types/http-statuses";
 
-
-export async function getBlogPostListHandler(
-    req: Request<{ id: string }, {}, {}, PostQueryInput>,
+export async function createPostForBlogHandler(
+    req: Request<{ id: string }, {}, PostInputModel>,
     res: Response,
-) {
+): Promise<void> {
     try {
         const blogId = req.params.id;
-        const queryInput = req.query;
+        const input = req.body;
 
-        const { items, totalCount } = await PostsService.findPostByBlog(
-            queryInput,
-            blogId,
+        const dto = await PostsService.createForBlog(input, blogId);
 
-        );
-
-        const postListOutput = mapToPostListPaginatedOutput(items, {
-            pageNumber: queryInput.pageNumber,
-            pageSize: queryInput.pageSize,
-            totalCount,
-        });
-        res.send(postListOutput);
-    } catch (e: unknown) {
+        res.status(HttpStatus.Created).send(dto);
+    } catch (e) {
         errorsHandler(e, res);
     }
 }

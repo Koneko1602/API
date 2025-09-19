@@ -120,5 +120,12 @@ export const postRepository = {
         ]);
         return { items, totalCount };
     },
+    async insert(post: Post): Promise<WithId<Post>> {
+        const result = await PostsCollection.insertOne(post);
+        return {
+            ...post,
+            _id: result.insertedId,
+        };
+    }
 
 };

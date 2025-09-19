@@ -4,6 +4,9 @@ import {postRepository} from "../repository/PostRepository";
 import {WithId} from "mongodb";
 import {mapInputToPostDto} from "../routes/mappers/map-to-post-update";
 import {blogRepository} from "../../Blogs/repository/BlogRepository";
+import {MapToPostDto} from "../routes/mappers/mapToPostDto";
+import {mapInputToPost} from "../routes/mappers/Map-to-postInput-dto";
+import {postModelDto} from "../dto/PostModelDto";
 
 
 export const PostsService = {
@@ -58,4 +61,18 @@ export const PostsService = {
         await postRepository.delete(id);
         return;
     },
+    async createForBlog(input: PostInputModel, blogId: string,): Promise<postModelDto> {
+        const blog = await blogRepository.findByIdOrFail(blogId);
+
+        const post: Post = {
+            ...mapInputToPost(input, blog.name),
+            blogId,
+            blogName: blog.name, // денормализация
+            createdAt: new Date(),
+        };
+
+        const created = await postRepository.insert(post);
+        return MapToPostDto(created);
+    }
+
 };
