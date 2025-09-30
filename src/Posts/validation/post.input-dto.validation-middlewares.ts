@@ -29,11 +29,17 @@ const blogId = body('blogId')
     .withMessage('blogId must be a valid MongoDB ObjectId');
 
 
-export const PostInputDtoValidation = [
+export const postInputDtoValidation = [
     titleValidation,
     shortDescription,
     content,
     blogId,
 
 ];
+export const postForBlogInputDtoValidation = [
+    titleValidation,
+    shortDescription,
+    content,
+
+]
 

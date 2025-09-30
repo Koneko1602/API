@@ -2,6 +2,7 @@ import { Request, Response} from "express";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {BlogInputModel} from "../../domain/BlogModel";
 import {BlogsService} from "../../application/Blogs.service";
+import {errorsHandler} from "../../../core/errors/errors.handler";
 
 
 
@@ -15,6 +16,6 @@ export async function updateBlogHandler (
         await BlogsService.update(id, req.body )
         res.sendStatus(HttpStatus.NoContent);
     } catch (e: unknown) {
-        res.sendStatus(HttpStatus.InternalServerError);
+        errorsHandler(e, res);
     }
 }

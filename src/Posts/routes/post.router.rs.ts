@@ -7,7 +7,7 @@ import {superAdminGuardMiddleware} from "../../Authorization/super-admin.guard-m
 import {createPostHandler} from "./handlers/create-post.handler";
 import {updatePostHandler} from "./handlers/update-post.handler";
 import {deletePostHandler} from "./handlers/delete-post.handler";
-import {PostInputDtoValidation} from "../validation/post.input-dto.validation-middlewares";
+import {postInputDtoValidation} from "../validation/post.input-dto.validation-middlewares";
 import {createPostForBlogHandler} from "./handlers/createPostForBlogHandler";
 
 
@@ -27,29 +27,19 @@ PostRouter
     .post(
         '',
         superAdminGuardMiddleware,
-        PostInputDtoValidation,
+        postInputDtoValidation,
         inputValidationResultMiddleware,
         createPostHandler,
 
 
 
      )
-    // .post (
-    //     '/:blogId/posts',
-    //     superAdminGuardMiddleware,
-    //     PostInputDtoValidation,
-    //     inputValidationResultMiddleware,
-    //     createPostForBlogHandler
-    //
-    //
-    //
-    // )
 
     .put(
         '/:id',
         superAdminGuardMiddleware,
         idValidation,
-        PostInputDtoValidation,
+        postInputDtoValidation,
         inputValidationResultMiddleware,
         updatePostHandler,
 

@@ -15,16 +15,14 @@ export async function createPostForBlogHandler(
     try {
         const blogId = req.params.blogId;
 
-        const blog = await blogRepository.findById(blogId);
-        if (!blog) {
-            res.status(HttpStatus.NotFound).send({ message: 'Блог не найден' });
-            return;
-        }
 
-        const blogName = blog.name;
-        const post = mapInputToPost(req.body, blogName, blogId); // передаём blogId явно
+        const createdPostId = await PostsService.create({
+            blogId,
+            content:req.body.content,
+            title:req.body.title,
+            shortDescription:req.body.shortDescription
+        });
 
-        const createdPostId = await PostsService.create(post);
         const createdPost = await PostsService.findByIdOrFail(createdPostId);
         const postDto = MapToPostDto(createdPost);
 
