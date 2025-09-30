@@ -101,23 +101,47 @@ export const postRepository = {
         }
         return ;
     },
+    // async findPostByBlog(
+    //     queryDto: PostQueryInput,
+    //     blogId: string,
+    // ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
+    //     const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
+    //     const filter = { 'blog.id': blogId };
+    //     const skip = (pageNumber - 1) * pageSize;
+    //
+    //     const [items, totalCount] = await Promise.all([
+    //         PostsCollection
+    //             .find(filter)
+    //             .sort({ [sortBy]: sortDirection })
+    //             .skip(skip)
+    //             .limit(pageSize)
+    //             .toArray(),
+    //         PostsCollection.countDocuments(filter),
+    //     ]);
+    //     return { items, totalCount };
+    // },
+
     async findPostByBlog(
         queryDto: PostQueryInput,
         blogId: string,
     ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
-        const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
-        const filter = { 'blog.id': blogId };
+        const pageNumber = Number(queryDto.pageNumber) || 1;
+        const pageSize = Number(queryDto.pageSize) || 10;
+        const sortBy = queryDto.sortBy || 'createdAt';
+        const sortDirection = queryDto.sortDirection === 'asc' ? 1 : -1;
+
+        const filter = { blogId };
         const skip = (pageNumber - 1) * pageSize;
 
         const [items, totalCount] = await Promise.all([
-            PostsCollection
-                .find(filter)
+            PostsCollection.find(filter)
                 .sort({ [sortBy]: sortDirection })
                 .skip(skip)
                 .limit(pageSize)
                 .toArray(),
             PostsCollection.countDocuments(filter),
         ]);
+
         return { items, totalCount };
     },
     async insert(post: Post): Promise<WithId<Post>> {

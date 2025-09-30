@@ -7,12 +7,12 @@ import {PostInputModel} from "../../../Posts/domain/PostModel";
 import {HttpStatus} from "../../../core/types/http-statuses";
 
 export async function getBlogPostListHandler(
-    req: Request<{ id: string }, {},  PostQueryInput>,
+    req: Request<{ id: string }, {}, {}, PostQueryInput>,
     res: Response,
 ): Promise<void> {
     try {
         const blogId = req.params.id;
-        const input = req.body;
+        const input: PostQueryInput = req.query;
 
         const dto = await PostsService.findPostByBlog(input, blogId);
 
