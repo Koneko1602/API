@@ -9,11 +9,11 @@ import {deleteBlogHandler} from "./handlers/delete-blog.handler";
 import {superAdminGuardMiddleware} from "../../Authorization/super-admin.guard-middleware";
 import {Router} from "express";
 import {BlogInputDtoValidation} from "../validation/blog.input-dto.validation-middlewares";
-import {
-    paginationAndSortingValidation
+import {paginationAndSortingValidation
 } from "../../core/Middlewares/validation/query-pagination-sorting.validation-middleware";
 import {BlogSortField} from "./input/blog-sort-field";
-import {getBlogPostListHandler} from "./handlers/get-blog-post-list.handler";
+import { getBlogPostListHandler} from "./handlers/get-blog-post-list.handler";
+import {createBlogPostHandler} from "./handlers/create post-blog.handler";
 
 
 export const BlogRouter = Router ({});
@@ -40,7 +40,7 @@ BlogRouter
         BlogInputDtoValidation,
         inputValidationResultMiddleware,
         createBlogHandler,
-
+        createBlogPostHandler
 
     )
 

@@ -6,15 +6,15 @@ import {mapToPostListPaginatedOutput} from "../../../Posts/routes/mappers/MapToP
 import {PostInputModel} from "../../../Posts/domain/PostModel";
 import {HttpStatus} from "../../../core/types/http-statuses";
 
-export async function createPostForBlogHandler(
-    req: Request<{ id: string }, {}, PostInputModel>,
+export async function getBlogPostListHandler(
+    req: Request<{ id: string }, {},  PostQueryInput>,
     res: Response,
 ): Promise<void> {
     try {
         const blogId = req.params.id;
         const input = req.body;
 
-        const dto = await PostsService.createForBlog(input, blogId);
+        const dto = await PostsService.findPostByBlog(input, blogId);
 
         res.status(HttpStatus.Created).send(dto);
     } catch (e) {

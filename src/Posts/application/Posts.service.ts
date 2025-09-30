@@ -7,9 +7,24 @@ import {blogRepository} from "../../Blogs/repository/BlogRepository";
 import {MapToPostDto} from "../routes/mappers/mapToPostDto";
 import {mapInputToPost} from "../routes/mappers/Map-to-postInput-dto";
 import {postModelDto} from "../dto/PostModelDto";
+import {Blog} from "../../Blogs/domain/BlogModel";
 
 
 export const PostsService = {
+
+
+    async  findBlogByPost(postId: string): Promise<string | null> {
+        const post = await postRepository.findById(postId);
+        if (!post || !post.blogId) {
+            return null;
+        }
+
+        const blog = await blogRepository.findById(post.blogId);
+        return blog?.name ?? null;
+    },
+
+
+
 
     async findPostByBlog(
         queryDto: PostQueryInput,

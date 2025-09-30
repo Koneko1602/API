@@ -126,6 +126,10 @@ export const postRepository = {
             ...post,
             _id: result.insertedId,
         };
-    }
+    },
+    async findBlogName(postId:string): Promise<WithId<Post> | null> {
+        return await PostsCollection.findOne({ blogId: postId  });
 
+
+    }
 };
