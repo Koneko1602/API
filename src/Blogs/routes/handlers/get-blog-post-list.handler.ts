@@ -14,10 +14,24 @@ export async function getBlogPostListHandler(
         const blogId = req.params.id;
         const input: PostQueryInput = req.query;
 
-        const dto = await PostsService.findPostByBlog(input, blogId);
+        const pageNumber = Number(input.pageNumber) || 1;
+        const pageSize = Number(input.pageSize) || 10;
 
-        res.status(HttpStatus.Created).send(dto);
+        const { items, totalCount } = await PostsService.findPostByBlog(
+            { ...input, pageNumber, pageSize },
+            blogId
+        );
+
+        const dto = mapToPostListPaginatedOutput(items, {
+            pageNumber,
+            pageSize,
+            totalCount,
+        });
+
+        res.status(HttpStatus.Ok).send(dto);
     } catch (e) {
         errorsHandler(e, res);
     }
 }
+
+
