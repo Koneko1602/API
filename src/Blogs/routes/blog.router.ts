@@ -1,6 +1,6 @@
 
 import {getBlogListHandler} from "./handlers/get-blog-list.handler";
-import {idValidation} from "../../core/Middlewares/validation/params-id.validation-middleware";
+import {blogIdValidation, idValidation} from "../../core/Middlewares/validation/params-id.validation-middleware";
 import {inputValidationResultMiddleware} from "../../core/Middlewares/validation/input-validation-result.middleware";
 import {createBlogHandler} from "./handlers/create-blog.handler";
 import {getBlogHandler} from "./handlers/get-blog.handler";
@@ -78,8 +78,8 @@ BlogRouter
     )
 
     .get(
-        '/:id/posts',
-        idValidation,
+        '/:blogId/posts',
+        blogIdValidation,
         paginationAndSortingValidation(BlogSortField),
         inputValidationResultMiddleware,
         getBlogPostListHandler,

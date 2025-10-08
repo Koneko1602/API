@@ -1,4 +1,5 @@
 import { HttpStatus } from './http-statuses';
+import {FieldError} from "../errors/APIErrorResult";
 
 type ValidationErrorOutput = {
     status: HttpStatus;
@@ -7,4 +8,4 @@ type ValidationErrorOutput = {
     code: string | null;
 };
 
-export type ValidationErrorListOutput = { errors: ValidationErrorOutput[] };
+export type ValidationErrorListOutput = { errorsMessages: FieldError[] };

@@ -11,16 +11,21 @@ import {PostQueryInput} from "../routes/input/post-query.input";
 export const postRepository = {
     async findMany ( queryDto:PostQueryInput,): Promise<{items: WithId<Post>[]; totalCount: number}> {
         const {
-            pageNumber,
-            pageSize,
-            sortBy,
-            sortDirection,
+            pageNumber: rawPageNumber,
+            pageSize: rawPageSize,
+            // 1. ИСПРАВЛЕНИЕ: Устанавливаем значения по умолчанию для SORTING
+            sortBy = 'createdAt', // Используем 'createdAt' по умолчанию
+            sortDirection = 'desc', // Используем 'desc' по умолчанию
             searchPostTitleTerm,
             searchPostShortDescriptionTerm,
             searchPostBlogIdTerm,
-
         } = queryDto;
 
+        // 2. ИСПРАВЛЕНИЕ: Безопасное преобразование и значения по умолчанию для PAGINATION
+        const pageNumber = Number(rawPageNumber) || 1;
+        const pageSize = Number(rawPageSize) || 10;
+
+        // Теперь 'skip' вычисляется корректно, без риска NaN
         const skip = (pageNumber - 1) * pageSize;
         const filter: any = {};
 
@@ -33,9 +38,14 @@ export const postRepository = {
         if (searchPostBlogIdTerm) {
             filter.blogId = {$regex:searchPostBlogIdTerm, $options: 'i'}
         }
+
+        // Преобразуем строковое направление в формат MongoDB (1 или -1)
+        const mongoSortDirection = sortDirection === 'asc' ? 1 : -1;
+
         const items = await PostsCollection
             .find(filter)
-            .sort({ [ sortBy ]: sortDirection})
+            // 3. ИСПРАВЛЕНИЕ: Используем mongoSortDirection
+            .sort({ [ sortBy ]: mongoSortDirection})
             .skip(skip)
             .limit(pageSize)
             .toArray();
@@ -45,20 +55,37 @@ export const postRepository = {
         return { items, totalCount };
     },
 
-
-
-
     async findById(id: string): Promise<WithId<Post> | null> {
-        return PostsCollection.findOne({ _id: new ObjectId(id)});
+        let objectId: ObjectId;
+        try {
+            // Безопасное создание ObjectId
+            objectId = new ObjectId(id);
+        } catch (e) {
+            // Если ID невалиден по формату, мы не можем его найти.
+            return null;
+        }
+
+        return PostsCollection.findOne({ _id: objectId });
     },
-    async findByIdOrFail (id: string): Promise<WithId<Post>> {
-        const res = await PostsCollection.findOne({_id: new ObjectId(id)});
+
+
+    async findByIdOrFail(id: string): Promise<WithId<Post>> {
+        let objectId: ObjectId;
+
+        try {
+            objectId = new ObjectId(id);
+        } catch (e) {
+            // Если ID невалиден, мы не можем его найти. Бросаем RepositoryNotFoundError.
+            throw new RepositoryNotFoundError('Post not exist'); // 💡 ИСПРАВЛЕНИЕ: Используйте 'Post not exist'
+        }
+
+        const res = await PostsCollection.findOne({ _id: objectId });
+
         if (!res) {
-            throw new RepositoryNotFoundError('Blog not exist');
+            throw new RepositoryNotFoundError('Post not exist'); // 💡 ИСПРАВЛЕНИЕ: Используйте 'Post not exist'
         }
         return res;
     },
-
     // Создать новый блог
     async create(newBlog: Post): Promise<string> {
         const insertResult= await PostsCollection.insertOne(newBlog);
@@ -101,25 +128,7 @@ export const postRepository = {
         }
         return ;
     },
-    // async findPostByBlog(
-    //     queryDto: PostQueryInput,
-    //     blogId: string,
-    // ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
-    //     const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
-    //     const filter = { 'blog.id': blogId };
-    //     const skip = (pageNumber - 1) * pageSize;
-    //
-    //     const [items, totalCount] = await Promise.all([
-    //         PostsCollection
-    //             .find(filter)
-    //             .sort({ [sortBy]: sortDirection })
-    //             .skip(skip)
-    //             .limit(pageSize)
-    //             .toArray(),
-    //         PostsCollection.countDocuments(filter),
-    //     ]);
-    //     return { items, totalCount };
-    // },
+
 
     async findPostByBlog(
         queryDto: PostQueryInput,

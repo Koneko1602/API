@@ -8,15 +8,16 @@ import {ValidationErrorListOutput} from "../../types/validationError.dto";
 import {HttpStatus} from "../../types/http-statuses";
 import {ValidationErrorType} from "../../types/validationError";
 
+// Обновленная функция для соответствия тесту
 export const createErrorMessages = (
     errors: ValidationErrorType[],
 ): ValidationErrorListOutput => {
     return {
-        errors: errors.map((error) => ({
-            status: error.status,
-            detail: error.detail, //error message
-            source: { pointer: error.source ?? '' }, //error field
-            code: error.code ?? null, //domain error code
+        errorsMessages: errors.map((error) => ({ // <-- Изменено 'errors' на 'errorsMessages'
+            // source (путь/имя поля) -> field
+            field: error.source ?? 'general',
+            // detail (сообщение) -> message
+            message: error.detail,
         })),
     };
 };

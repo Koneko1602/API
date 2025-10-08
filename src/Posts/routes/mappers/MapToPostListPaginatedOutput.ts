@@ -5,6 +5,7 @@ import {ResourceType} from "../../../core/types/resource-type";
 
 
 export function mapToPostListPaginatedOutput(
+
     posts: WithId<Post>[],
     meta: { pageNumber: number; pageSize: number; totalCount: number }
 ): {

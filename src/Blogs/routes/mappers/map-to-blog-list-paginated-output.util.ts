@@ -3,6 +3,7 @@ import {Blog} from "../../domain/BlogModel";
 import {BlogDTO} from "../../dto/BlogModelDTO";
 import { mapToBlogDto} from "./Map-to-blog-dto";
 
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ПРОХОЖДЕНИЯ ТЕСТА
 export function mapToBlogListPaginatedOutput(
     blogs: WithId<Blog>[],
     meta: {
@@ -10,26 +11,27 @@ export function mapToBlogListPaginatedOutput(
         pageSize: number;
         totalCount: number;
     }
-): {
-    items: BlogDTO[];
-    meta: {
-        pageNumber: number;
-        pageSize: number;
-        totalCount: number;
-        totalPageCount: number;
-    };
-} {
+) {
+    // 1. Вычисляем общее количество страниц с округлением вверх
+    const totalPages = Math.ceil(meta.totalCount / meta.pageSize);
+
+    // 2. Маппим элементы
     const items = blogs.map(mapToBlogDto);
 
-    const metaOutput = {
-        pageNumber: meta.pageNumber,
+    return {
+        // 3. ПЕРЕИМЕНОВАНИЕ И ПЛОСКАЯ СТРУКТУРА
+
+        // meta.totalPageCount -> pagesCount
+        pagesCount: totalPages,
+
+        // meta.pageNumber -> page
+        page: meta.pageNumber,
+
+        // Оставшиеся поля совпадают по имени и остаются на верхнем уровне
         pageSize: meta.pageSize,
         totalCount: meta.totalCount,
-        totalPageCount: Math.ceil(meta.totalCount / meta.pageSize),
-    };
 
-    return {
-        items,
-        meta: metaOutput,
+        // Массив элементов
+        items: items,
     };
 }

@@ -46,14 +46,26 @@ export const blogRepository = {
     async findById(id: string): Promise<WithId<Blog> | null> {
         return BlogsCollection.findOne({ _id: new ObjectId(id)});
     },
+    // В BlogsRepository.ts
     async findByIdOrFail (id: string): Promise<WithId<Blog>> {
-        const res = await BlogsCollection.findOne({_id: new ObjectId(id)});
+        let objectId: ObjectId;
+
+        try {
+            objectId = new ObjectId(id); // ⬅️ Оборачиваем потенциально проблемный вызов
+        } catch (e) {
+            // Если ID невалиден (не 24 hex), просто выбрасываем "Не найдено"
+            // Это более безопасно, чем падать
+            throw new RepositoryNotFoundError('Blog not exist');
+        }
+
+        // Ищем уже по безопасному objectId
+        const res = await BlogsCollection.findOne({_id: objectId});
+
         if (!res) {
             throw new RepositoryNotFoundError('Blog not exist');
         }
         return res;
     },
-
     // Создать новый блог
     async create(newBlog: Blog): Promise<string> {
         const insertResult= await BlogsCollection.insertOne(newBlog);

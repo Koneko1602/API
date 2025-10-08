@@ -2,41 +2,44 @@ import { Response } from 'express';
 import { RepositoryNotFoundError } from './repository-not-found.error';
 import { HttpStatus } from '../types/http-statuses';
 import { DomainError } from './domain.error';
-import {createErrorMessages} from "../Middlewares/validation/input-validation-result.middleware";
+import {createErrorsMessages} from "./FieldError";
+import { FieldError } from "./APIErrorResult";
 
 export function errorsHandler(error: unknown, res: Response): void {
     if (error instanceof RepositoryNotFoundError) {
         const httpStatus = HttpStatus.NotFound;
 
         res.status(httpStatus).send(
-            createErrorMessages([
+            createErrorsMessages([
                 {
-                    status: httpStatus,
-                    detail: error.message,
+                    field: 'general',
+                    message: error.message,
                 },
-            ]),
+            ])
         );
-
         return;
     }
 
     if (error instanceof DomainError) {
-        const httpStatus = HttpStatus.UnprocessableEntity;
+        const httpStatus = HttpStatus.BadRequest;
 
-        res.status(httpStatus).send(
-            createErrorMessages([
-                {
-                    status: httpStatus,
-                    source: error.source,
-                    detail: error.message,
-                    code: error.code,
-                },
-            ]),
-        );
+        const fieldErrors: FieldError[] = [
+            {
+                field: error.source ?? 'unknown',
+                message: error.message,
+            },
+        ];
 
+        res.status(httpStatus).send(createErrorsMessages(fieldErrors));
         return;
     }
 
-    res.status(HttpStatus.InternalServerError);
-    return;
+    // 🟢 ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ: FALLBACK ДЛЯ ВСЕХ НЕОБРАБОТАННЫХ ОШИБОК
+    console.error('Unhandled server error:', error);
+
+    if (!res.headersSent) {
+        res.status(HttpStatus.InternalServerError).send({
+            errorsMessages: [{ field: "general", message: "Internal server error" }]
+        });
+    }
 }
