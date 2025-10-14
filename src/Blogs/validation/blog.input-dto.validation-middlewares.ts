@@ -20,7 +20,9 @@ const websiteUrl = body('websiteUrl')
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage('Length of URL is not correct')
-    .isURL();
+    .matches(/^https:\/\/([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_-]+)*\/?$/)
+    .withMessage('URL must start with https:// and follow correct format');
+
 export const BlogInputDtoValidation = [
     nameValidation,
     description,

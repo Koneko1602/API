@@ -13,7 +13,7 @@ export type PostDataOutput = {
         blogId: string;
         // ты сохраняешь часть данных из связанной сущности, чтобы не делать лишний запрос при отображении.
         blogName: string;//Это называется денормализация
-        createdAt : Date;
+        createdAt : string;
 
     }
 
