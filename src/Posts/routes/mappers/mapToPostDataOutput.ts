@@ -1,5 +1,5 @@
-import {Post} from "../../../Posts/domain/PostModel";
-import {PostDataOutput} from "../../../Posts/routes/output/post-data.output";
+import {Post} from "../../domain/PostModel";
+import {PostDataOutput} from "../output/post-data.output";
 import {WithId} from "mongodb";
 import {ResourceType} from "../../../core/types/resource-type";
 
