@@ -1,45 +1,93 @@
 import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
-import {BlogsCollection} from "../../db/Mongo.db";
+import {BlogsCollection, PostsCollection} from "../../db/Mongo.db";
 import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
 import {BlogQueryInput} from "../routes/input/blog-query.input";
+import {PostQueryInput} from "../../Posts/routes/input/post-query.input";
+import {Post} from "../../Posts/domain/PostModel";
 
 
 export const blogRepository = {
+    // async findMany ( queryDto:BlogQueryInput,): Promise<{items: WithId<Blog>[]; totalCount: number}> {
+    //     const {
+    //         pageNumber = 1,
+    //         pageSize = 10,
+    //         sortBy = 'createdAt',
+    //         sortDirection = 'desc',
+    //         searchBlogNameTerm,
+    //         searchBlogDescriptionTerm,
+    //         searchCreatedAtTerm,
+    //
+    //     } = queryDto;
+    //
+    //     const skip = (pageNumber - 1) * pageSize;
+    //     const filter: any = {};
+    //
+    //     if (searchBlogNameTerm) {
+    //         filter.name = { $regex: searchBlogNameTerm, $options: 'i'}
+    //     }
+    //     if (searchBlogDescriptionTerm) {
+    //         filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
+    //     }
+    //     if (searchCreatedAtTerm) {
+    //         filter.CreatedAt = {$regex:searchCreatedAtTerm, $options: 'i'}
+    //     }
+    //     const items = await BlogsCollection
+    //         .find(filter)
+    //         .sort({ [ sortBy ]: sortDirection})
+    //         .skip(skip)
+    //         .limit(pageSize)
+    //         .toArray();
+    //
+    //         const totalCount = await BlogsCollection.countDocuments(filter);
+    //
+    //         return { items, totalCount };
+    // },
+
     async findMany ( queryDto:BlogQueryInput,): Promise<{items: WithId<Blog>[]; totalCount: number}> {
         const {
-            pageNumber,
-            pageSize,
-            sortBy,
-            sortDirection,
-            searchBlogNameTerm,
-            searchBlogDescriptionTerm,
+            pageNumber: rawPageNumber,
+            pageSize: rawPageSize,
+            // 1. ИСПРАВЛЕНИЕ: Устанавливаем значения по умолчанию для SORTING
+            sortBy = 'createdAt', // Используем 'createdAt' по умолчанию
+            sortDirection = 'desc', // Используем 'desc' по умолчанию
+            searchNameTerm,
             searchCreatedAtTerm,
-
+            searchBlogDescriptionTerm,
         } = queryDto;
 
+        // 2. ИСПРАВЛЕНИЕ: Безопасное преобразование и значения по умолчанию для PAGINATION
+        const pageNumber = Number(rawPageNumber) || 1;
+        const pageSize = Number(rawPageSize) || 10;
+
+        // Теперь 'skip' вычисляется корректно, без риска NaN
         const skip = (pageNumber - 1) * pageSize;
         const filter: any = {};
 
-        if (searchBlogNameTerm) {
-            filter.name = { $regex: searchBlogNameTerm, $options: 'i'}
-        }
-        if (searchBlogDescriptionTerm) {
-            filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
-        }
-        if (searchCreatedAtTerm) {
-            filter.CreatedAt = {$regex:searchCreatedAtTerm, $options: 'i'}
-        }
+                 if (searchNameTerm) {
+                    filter.name = { $regex: searchNameTerm, $options: 'i'}
+                }
+                if (searchBlogDescriptionTerm) {
+                    filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
+                }
+                if (searchCreatedAtTerm) {
+                    filter.createdAt = {$regex:searchCreatedAtTerm, $options: 'i'}
+                }
+
+        // Преобразуем строковое направление в формат MongoDB (1 или -1)
+        const mongoSortDirection = sortDirection === 'asc' ? 1 : -1;
+
         const items = await BlogsCollection
             .find(filter)
-            .sort({ [ sortBy ]: sortDirection})
+            // 3. ИСПРАВЛЕНИЕ: Используем mongoSortDirection
+            .sort({ [ sortBy ]: mongoSortDirection})
             .skip(skip)
             .limit(pageSize)
             .toArray();
 
-            const totalCount = await BlogsCollection.countDocuments(filter);
+        const totalCount = await BlogsCollection.countDocuments(filter);
 
-            return { items, totalCount };
+        return { items, totalCount };
     },
 
 

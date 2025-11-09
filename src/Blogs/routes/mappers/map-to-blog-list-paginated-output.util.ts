@@ -4,7 +4,7 @@ import {BlogDTO} from "../../dto/BlogModelDTO";
 import { mapToBlogDto} from "./Map-to-blog-dto";
 import {Post} from "../../../Posts/domain/PostModel";
 import {PostListPaginatedOutput} from "../../../Posts/routes/output/post-list-paginated.output";
-import {mapToPostDataOutput} from "./mapToPostDataOutput";
+import {mapToPostDataOutput} from "../../../Posts/routes/mappers/mapToPostDataOutput";
 
 // ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ПРОХОЖДЕНИЯ ТЕСТА
 export function mapToBlogListPaginatedOutput(
