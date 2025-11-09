@@ -5,6 +5,7 @@ import {blogRepository} from "../repository/BlogRepository";
 import {BlogQueryInput} from "../routes/input/blog-query.input";
 import {mapInputToBlog} from "../routes/mappers/Map-to-blogInput-dto";
 import {mapInputToBlogDto} from "../routes/mappers/Map-to-blog-update";
+import {Post} from "../../Posts/domain/PostModel";
 
 
 export const BlogsService = {
