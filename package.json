@@ -12,14 +12,21 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
-    "mongodb": "^6.17.0"
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "nodemailer": "^7.0.10"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.3",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^7.0.3",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",

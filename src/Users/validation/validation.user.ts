@@ -50,7 +50,7 @@ import { usersRepository} from "../repository/UserRepository";
     .withMessage("password is not correct");
 
     export const userValidation = {
-
+        passwordValidation,
         emailValidation,
         loginValidation,
         loginOrEmailValidation
