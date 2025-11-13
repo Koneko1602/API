@@ -49,6 +49,11 @@ import { usersRepository} from "../repository/UserRepository";
     .isLength({min: 6, max: 20})
     .withMessage("password is not correct");
 
+
+
+
+
+
     export const userValidation = {
         passwordValidation,
         emailValidation,

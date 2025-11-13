@@ -1,8 +1,9 @@
 import express, {Express, Request, Response} from "express";
 import {BlogRouter} from "./Blogs/routes/blog.router";
-import {BLOGS_PATH, POSTS_PATH, TESTS_PATH} from "./core/paths/paths";
+import {BLOGS_PATH, POSTS_PATH, TESTS_PATH, USERS_PATH} from "./core/paths/paths";
 import {PostRouter} from "./Posts/routes/post.router.rs";
 import {TestRouter} from "./tests/routers/Test.router";
+import {usersRouter} from "./Users/routes/users.router";
 
 export const setupApp = (app: Express) => {
     app.use(express.json()); // middleware для парсинга JSON в теле запроса
@@ -18,5 +19,6 @@ export const setupApp = (app: Express) => {
     app.use(TESTS_PATH,TestRouter);
     app.use(BLOGS_PATH,BlogRouter);
     app.use(POSTS_PATH,PostRouter);
+    app.use(USERS_PATH,usersRouter);
     return app;
 }

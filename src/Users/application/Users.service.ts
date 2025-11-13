@@ -1,5 +1,7 @@
 import {IUserDB} from "../types/user.db.interface";
 import {usersRepository} from "../repository/UserRepository";
+import {CreateUserDto} from "../types/create-user.dto";
+import {bcryptService} from "../../Authorization/adapters/bcrypt.service";
 
 
 export const usersService = {
