@@ -5,7 +5,7 @@ import { UsersCollection } from "../../db/Mongo.db";
 export const usersRepository = {
     async create(user: IUserDB): Promise<string> {
         const newUser = await UsersCollection
-            .insertOne({ ...user });
+          .insertOne({ ...user });
         return newUser.insertedId.toString();
     },
     async delete(id: string): Promise<boolean> {
