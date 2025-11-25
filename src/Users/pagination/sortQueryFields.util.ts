@@ -1,7 +1,7 @@
 import {SortQueryFieldsType} from "./sortQueryFields.type";
-import {SortQueryFilterType} from "./sortQueryFilter.type";
+import {SortQueryFilterNumberType} from "./sortQueryFilter.ntype";
 
-export const sortQueryFieldsUtil = (query: SortQueryFieldsType): SortQueryFilterType => {
+export const sortQueryFieldsUtil = (query: SortQueryFieldsType): SortQueryFilterNumberType => {
     const pageNumber = !isNaN(Number(query.pageNumber))
         ? Number(query.pageNumber)
         : 1;

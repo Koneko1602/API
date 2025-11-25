@@ -1,4 +1,4 @@
-export type SortQueryFilterType = {
+export type SortQueryFilterNumberType = {
     pageNumber: number,
     pageSize: number,
     sortDirection: 1 | -1,

@@ -21,6 +21,6 @@ authRouter.post(
         const accessToken = await authService.loginUser(loginOrEmail, password);
         if (!accessToken) return res.sendStatus(HttpStatus.Unauthorized);
 
-        return res.status(HttpStatus.Ok).send({ accessToken });
+        return res.status(HttpStatus.NoContent).send({ accessToken });
     },
 );

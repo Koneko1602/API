@@ -24,21 +24,24 @@ usersRouter.get(
         req: RequestWithQuery<UsersQueryFieldsType>,
         res: Response<IPagination<IUserView[]>>,
     ) => {
-        const { pageNumber, pageSize, sortBy, sortDirection } = sortQueryFieldsUtil(
-            req.query,
-        );
 
-        const allUsers = await usersQwRepository.findAllUsers({
-            pageNumber,
-            pageSize,
-            sortBy,
-            sortDirection,
-        });
+        // 1. Получаем чистые данные пагинации/сортировки
+        const cleanSortPagination = sortQueryFieldsUtil(req.query);
+
+        // 2. Извлекаем необработанные параметры поиска
+        const { searchLoginTerm, searchEmailTerm } = req.query;
+
+        // 3. 🚀 ФОРМИРУЕМ ПОЛНЫЙ, ЧИСТЫЙ ОБЪЕКТ
+        const finalQueryFilter = {
+            ...cleanSortPagination, // Чистые pageNumber, pageSize, sortBy, sortDirection (1|-1)
+            searchLoginTerm,        // Необработанные, но нужные для фильтрации
+            searchEmailTerm,
+        };
+
+        const allUsers = await usersQwRepository.findAllUsers(finalQueryFilter);
 
         return res.status(200).send(allUsers);
     },
-);
-
 usersRouter.post(
     "/",
     baseAuthGuard,
@@ -54,7 +57,8 @@ usersRouter.post(
 
         return res.status(HttpStatus.Created).send(newUser!);
     },
-);
+))
+;
 
 usersRouter.delete(
     "/:id",
