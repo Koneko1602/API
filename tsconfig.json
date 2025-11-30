@@ -13,11 +13,15 @@
   },
   "include": ["src/**/*"],
   "exclude": ["__tests__", "dist", "node_modules"],
+  "files": [
+    "src/index.d.ts"
+  ],
   "scripts": {
     "watch": "tsc -w",
     "dev": "nodemon --inspect dist/index.js",
     "jest": "jest -i",
     "lint": "eslint --fix .",
     "format": "prettier --write ."
-  }
+  },
+
 }
