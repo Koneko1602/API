@@ -16,11 +16,10 @@ export const setupApp = (app: Express) => {
     });
 
 
-
-    app.use(TESTS_PATH,TestRouter);
-    app.use(BLOGS_PATH,BlogRouter);
-    app.use(POSTS_PATH,PostRouter);
-    app.use(USERS_PATH,usersRouter);
-    app.use(AUTH_PATH,authRouter);
+    app.use(TESTS_PATH, TestRouter);
+    app.use(BLOGS_PATH, BlogRouter);
+    app.use(POSTS_PATH, PostRouter);
+    app.use(USERS_PATH, usersRouter);
+    app.use(AUTH_PATH, authRouter);
     return app;
 }

@@ -1,5 +1,5 @@
-import { Response, Router } from "express";
-import { CreateUserDto } from "../types/create-user.dto";
+import {Response, Router} from "express";
+import {CreateUserDto} from "../types/create-user.dto";
 import {baseAuthGuard} from "../../Authorization/api/guards/base.auth.guard";
 import {RequestWithBody, RequestWithParams, RequestWithQuery} from "../errors/requests";
 import {UsersQueryFieldsType} from "../types/users.queryFields.type";
@@ -29,7 +29,7 @@ usersRouter.get(
         const cleanSortPagination = sortQueryFieldsUtil(req.query);
 
         // 2. Извлекаем необработанные параметры поиска
-        const { searchLoginTerm, searchEmailTerm } = req.query;
+        const {searchLoginTerm, searchEmailTerm} = req.query;
 
         // 3. 🚀 ФОРМИРУЕМ ПОЛНЫЙ, ЧИСТЫЙ ОБЪЕКТ
         const finalQueryFilter = {
@@ -42,22 +42,22 @@ usersRouter.get(
 
         return res.status(200).send(allUsers);
     },
-usersRouter.post(
-    "/",
-    baseAuthGuard,
-    userValidation.passwordValidation,
-    userValidation.loginValidation,
-    userValidation.emailValidation,
-    inputValidationResultMiddleware,
-    async (req: RequestWithBody<CreateUserDto>, res: Response<IUserView>) => {
-        const { login, password, email } = req.body;
+    usersRouter.post(
+        "/",
+        baseAuthGuard,
+        userValidation.passwordValidation,
+        userValidation.loginValidation,
+        userValidation.emailValidation,
+        inputValidationResultMiddleware,
+        async (req: RequestWithBody<CreateUserDto>, res: Response<IUserView>) => {
+            const {login, password, email} = req.body;
 
-        const userId = await usersService.create({ login, password, email });
-        const newUser = await usersQwRepository.findById(userId);
+            const userId = await usersService.create({login, password, email});
+            const newUser = await usersQwRepository.findById(userId);
 
-        return res.status(HttpStatus.Created).send(newUser!);
-    },
-))
+            return res.status(HttpStatus.Created).send(newUser!);
+        },
+    ))
 ;
 
 usersRouter.delete(

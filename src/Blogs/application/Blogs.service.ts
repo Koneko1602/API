@@ -17,22 +17,22 @@ export const BlogsService = {
         return blogRepository.findMany(queryDto);
     },
 
-    async findByIdOrFail(id:string): Promise<WithId<Blog>> {
+    async findByIdOrFail(id: string): Promise<WithId<Blog>> {
 
         return blogRepository.findByIdOrFail(id);
     },
 
     async create(dto: BlogInputModel): Promise<string> {
         const newBlog: Blog = {
-                name: dto.name,
-                description: dto.description,
-                websiteUrl: dto.websiteUrl,
-                createdAt: new Date(),
-                isMembership: false,
+            name: dto.name,
+            description: dto.description,
+            websiteUrl: dto.websiteUrl,
+            createdAt: new Date(),
+            isMembership: false,
 
 
         };
-       return blogRepository.create(newBlog);
+        return blogRepository.create(newBlog);
 
     },
 

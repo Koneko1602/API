@@ -24,17 +24,17 @@ export const usersQwRepository = {
         } = sortQueryDto; // 👈 TypeScript теперь уверен во всех полях
 
         // 2. Формирование фильтра (логика поиска остается прежней)
-        const filter: any = { $or: [] };
+        const filter: any = {$or: []};
 
         if (searchLoginTerm) {
             filter.$or.push({
-                login: { $regex: searchLoginTerm, $options: 'i' }
+                login: {$regex: searchLoginTerm, $options: 'i'}
             });
         }
 
         if (searchEmailTerm) {
             filter.$or.push({
-                email: { $regex: searchEmailTerm, $options: 'i' }
+                email: {$regex: searchEmailTerm, $options: 'i'}
             });
         }
 
@@ -49,7 +49,7 @@ export const usersQwRepository = {
         const users = await UsersCollection
             .find(filter)
             // ✅ MongoDB доволен
-            .sort({ [sortBy]: sortDirection })
+            .sort({[sortBy]: sortDirection})
             .skip((pageNumber - 1) * pageSize)
             .limit(pageSize)
             .toArray();
@@ -65,7 +65,7 @@ export const usersQwRepository = {
     },
     async findById(id: string): Promise<IUserView | null> {
         const user = await UsersCollection
-            .findOne({ _id: new ObjectId(id) });
+            .findOne({_id: new ObjectId(id)});
         return user ? this._getInView(user) : null;
     },
     _getInView(user: WithId<IUserDB>): IUserView {
