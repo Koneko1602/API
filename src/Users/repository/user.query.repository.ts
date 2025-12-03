@@ -3,7 +3,6 @@ import {ObjectId, WithId} from "mongodb";
 import {IUserDB} from "../types/user.db.interface";
 import {IPagination} from "../pagination/pagination";
 import {UsersCollection} from "../../db/Mongo.db";
-import {UsersQueryFieldsType} from "../types/users.queryFields.type";
 import {CleanFilterAndSearchType} from "../pagination/CleanFilterAndSearchType";
 
 

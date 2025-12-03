@@ -1,8 +1,8 @@
 import { Request, Response} from "express";
-import {blogRepository} from "../../../Blogs/repository/BlogRepository";
+
 import {PostInputModel} from "../../domain/PostModel";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {mapInputToPost} from "../mappers/Map-to-postInput-dto";
+
 import {PostsService} from "../../application/Posts.service";
 import {MapToPostDto} from "../mappers/mapToPostDto";
 import {errorsHandler} from "../../../core/errors/errors.handler";

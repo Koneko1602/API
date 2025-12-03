@@ -8,43 +8,8 @@ import {Post} from "../../Posts/domain/PostModel";
 
 
 export const blogRepository = {
-    // async findMany ( queryDto:BlogQueryInput,): Promise<{items: WithId<Blog>[]; totalCount: number}> {
-    //     const {
-    //         pageNumber = 1,
-    //         pageSize = 10,
-    //         sortBy = 'createdAt',
-    //         sortDirection = 'desc',
-    //         searchBlogNameTerm,
-    //         searchBlogDescriptionTerm,
-    //         searchCreatedAtTerm,
-    //
-    //     } = queryDto;
-    //
-    //     const skip = (pageNumber - 1) * pageSize;
-    //     const filter: any = {};
-    //
-    //     if (searchBlogNameTerm) {
-    //         filter.name = { $regex: searchBlogNameTerm, $options: 'i'}
-    //     }
-    //     if (searchBlogDescriptionTerm) {
-    //         filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
-    //     }
-    //     if (searchCreatedAtTerm) {
-    //         filter.CreatedAt = {$regex:searchCreatedAtTerm, $options: 'i'}
-    //     }
-    //     const items = await BlogsCollection
-    //         .find(filter)
-    //         .sort({ [ sortBy ]: sortDirection})
-    //         .skip(skip)
-    //         .limit(pageSize)
-    //         .toArray();
-    //
-    //         const totalCount = await BlogsCollection.countDocuments(filter);
-    //
-    //         return { items, totalCount };
-    // },
 
-    async findMany ( queryDto:BlogQueryInput,): Promise<{items: WithId<Blog>[]; totalCount: number}> {
+    async findMany(queryDto: BlogQueryInput,): Promise<{ items: WithId<Blog>[]; totalCount: number }> {
         const {
             pageNumber: rawPageNumber,
             pageSize: rawPageSize,
@@ -64,15 +29,15 @@ export const blogRepository = {
         const skip = (pageNumber - 1) * pageSize;
         const filter: any = {};
 
-                 if (searchNameTerm) {
-                    filter.name = { $regex: searchNameTerm, $options: 'i'}
-                }
-                if (searchBlogDescriptionTerm) {
-                    filter.description = { $regex:searchBlogDescriptionTerm, $options: 'i'}
-                }
-                if (searchCreatedAtTerm) {
-                    filter.createdAt = {$regex:searchCreatedAtTerm, $options: 'i'}
-                }
+        if (searchNameTerm) {
+            filter.name = {$regex: searchNameTerm, $options: 'i'}
+        }
+        if (searchBlogDescriptionTerm) {
+            filter.description = {$regex: searchBlogDescriptionTerm, $options: 'i'}
+        }
+        if (searchCreatedAtTerm) {
+            filter.createdAt = {$regex: searchCreatedAtTerm, $options: 'i'}
+        }
 
         // Преобразуем строковое направление в формат MongoDB (1 или -1)
         const mongoSortDirection = sortDirection === 'asc' ? 1 : -1;
@@ -80,22 +45,22 @@ export const blogRepository = {
         const items = await BlogsCollection
             .find(filter)
             // 3. ИСПРАВЛЕНИЕ: Используем mongoSortDirection
-            .sort({ [ sortBy ]: mongoSortDirection})
+            .sort({[sortBy]: mongoSortDirection})
             .skip(skip)
             .limit(pageSize)
             .toArray();
 
         const totalCount = await BlogsCollection.countDocuments(filter);
 
-        return { items, totalCount };
+        return {items, totalCount};
     },
 
 
     async findById(id: string): Promise<WithId<Blog> | null> {
-        return BlogsCollection.findOne({ _id: new ObjectId(id)});
+        return BlogsCollection.findOne({_id: new ObjectId(id)});
     },
     // В BlogsRepository.ts
-    async findByIdOrFail (id: string): Promise<WithId<Blog>> {
+    async findByIdOrFail(id: string): Promise<WithId<Blog>> {
         let objectId: ObjectId;
 
         try {
@@ -116,14 +81,14 @@ export const blogRepository = {
     },
     // Создать новый блог
     async create(newBlog: Blog): Promise<string> {
-        const insertResult= await BlogsCollection.insertOne(newBlog);
+        const insertResult = await BlogsCollection.insertOne(newBlog);
 
 
-        return  insertResult.insertedId.toString();
+        return insertResult.insertedId.toString();
     },
 
     // Обновить данные блога
-    async update(id: string, body:BlogInputModel): Promise<void> {
+    async update(id: string, body: BlogInputModel): Promise<void> {
         const updateResult = await BlogsCollection.updateOne(
             {
                 _id: new ObjectId(id),
@@ -138,14 +103,14 @@ export const blogRepository = {
         );
 
         if (updateResult.matchedCount < 1) {
-            throw new RepositoryNotFoundError ('Blog not exist');
+            throw new RepositoryNotFoundError('Blog not exist');
         }
         return;
     },
 
 
     // Удалить блог
-    async delete(id: string): Promise <void> {
+    async delete(id: string): Promise<void> {
         const deleteResult = await BlogsCollection.deleteOne({
             _id: new ObjectId(id),
         });
@@ -153,6 +118,6 @@ export const blogRepository = {
         if (deleteResult.deletedCount < 1) {
             throw new RepositoryNotFoundError('Blog not exist')
         }
-        return ;
+        return;
     },
 };

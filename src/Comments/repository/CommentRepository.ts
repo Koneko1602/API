@@ -1,10 +1,17 @@
 import {CommentViewModel} from "../domain/CommentsModel";
-import {CommentsCollection} from "../../db/Mongo.db";
+import {CommentsCollection, UsersCollection} from "../../db/Mongo.db";
 import {ObjectId, WithId} from "mongodb";
+import {IUserDB} from "../../Users/types/user.db.interface";
+import {ICommentDB} from "../types/comment.db.interface";
 
 
 export const commentsRepository = {
     // Метод обновления
+    async create(comment: ICommentDB): Promise<string> {
+        const newComment = await CommentsCollection
+            .insertOne({...comment});
+        return newComment.insertedId.toString();
+    },
     async update(id: string, content: string): Promise<boolean> {
         const result = await CommentsCollection.updateOne(
             { _id: new ObjectId(id) },
@@ -18,7 +25,7 @@ export const commentsRepository = {
             .deleteOne({_id: new ObjectId(id)});
         return isDel.deletedCount === 1;
     },
-    async findById(id: string): Promise<WithId<CommentViewModel> | null> {
+    async findById(id: string): Promise<WithId<ICommentDB> | null> {
         return CommentsCollection
             .findOne({_id: new ObjectId(id)});
     }

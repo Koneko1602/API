@@ -13,25 +13,12 @@ import {Blog} from "../../Blogs/domain/BlogModel";
 export const PostsService = {
 
 
-    async  findBlogByPost(postId: string): Promise<string | null> {
-        const post = await postRepository.findById(postId);
-        if (!post || !post.blogId) {
-            return null;
-        }
-
-        const blog = await blogRepository.findById(post.blogId);
-        return blog?.name ?? null;
-    },
-
-
-
-
     async findPostByBlog(
         queryDto: PostQueryInput,
         blogId: string,
-    ): Promise<{items:WithId<Post>[]; totalCount : number}> {
+    ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
         await blogRepository.findByIdOrFail(blogId);
-        return postRepository.findPostByBlog(queryDto,blogId);
+        return postRepository.findPostByBlog(queryDto, blogId);
     },
 
     async findMany(
@@ -40,7 +27,7 @@ export const PostsService = {
         return postRepository.findMany(queryDto);
     },
 
-    async findByIdOrFail(id:string): Promise<WithId<Post>> {
+    async findByIdOrFail(id: string): Promise<WithId<Post>> {
 
         return postRepository.findByIdOrFail(id);
     },
@@ -52,10 +39,9 @@ export const PostsService = {
             title: dto.title,
             shortDescription: dto.shortDescription,
             content: dto.content,
-            blogName:blog.name,
+            blogName: blog.name,
             blogId: dto.blogId,
             createdAt: new Date(),
-
 
 
         };
@@ -76,18 +62,6 @@ export const PostsService = {
         await postRepository.delete(id);
         return;
     },
-    async createForBlog(input: PostInputModel, blogId: string,): Promise<postModelDto> {
-        const blog = await blogRepository.findByIdOrFail(blogId);
 
-        const post: Post = {
-            ...mapInputToPost(input, blog.name),
-            blogId,
-            blogName: blog.name, // денормализация
-            createdAt: new Date(),
-        };
-
-        const created = await postRepository.insert(post);
-        return MapToPostDto(created);
-    }
 
 };

@@ -1,27 +1,13 @@
-import { bcryptService } from "../adapters/bcrypt.service";
+import {bcryptService} from "../adapters/bcrypt.service";
 import {usersRepository} from "../../Users/repository/UserRepository";
 import {ResultStatus} from "../../Users/common/result/resultCode";
-import {Result} from  "../../Users/common/result/result.type";
+import {Result} from "../../Users/common/result/result.type";
 import {jwtService} from "../adapters/jwt.service";
 import {WithId} from "mongodb";
 import {IUserDB} from "../../Users/types/user.db.interface";
 
 export const authService = {
-    // async loginUser(
-    //     loginOrEmail: string,
-    //     password: string,
-    // ): Promise<{ accessToken: string } | null> {
-    //     const isCorrectCredentials = await this.checkUserCredentials(
-    //         loginOrEmail,
-    //         password,
-    //     );
-    //
-    //     if (!isCorrectCredentials) {
-    //         return null;
-    //     }
-    //
-    //     return { accessToken: "token" };
-    // },
+
     async loginUser(
         loginOrEmail: string,
         password: string,
@@ -31,7 +17,7 @@ export const authService = {
             return {
                 status: ResultStatus.Unauthorized,
                 errorMessage: 'Unauthorized',
-                extensions: [{ field: 'loginOrEmail', message: 'Wrong credentials' }],
+                extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
                 data: null,
             };
 
@@ -39,22 +25,12 @@ export const authService = {
 
         return {
             status: ResultStatus.Success,
-            data: { accessToken },
+            data: {accessToken},
             extensions: [],
         };
     },
 
 
-//     async checkUserCredentials(
-//         loginOrEmail: string,
-//         password: string,
-//     ): Promise<boolean> {
-//         const user = await usersRepository.findByLoginOrEmail(loginOrEmail);
-//         if (!user) return false;
-//
-//         return bcryptService.checkPassword(password, user.passwordHash);
-//     },
-// };
     async checkUserCredentials(
         loginOrEmail: string,
         password: string,
@@ -65,7 +41,7 @@ export const authService = {
                 status: ResultStatus.NotFound,
                 data: null,
                 errorMessage: 'Not Found',
-                extensions: [{ field: 'loginOrEmail', message: 'Not Found' }],
+                extensions: [{field: 'loginOrEmail', message: 'Not Found'}],
             };
 
         const isPassCorrect = await bcryptService.checkPassword(password, user.passwordHash);
@@ -74,7 +50,7 @@ export const authService = {
                 status: ResultStatus.BadRequest,
                 data: null,
                 errorMessage: 'Bad Request',
-                extensions: [{ field: 'password', message: 'Wrong password' }],
+                extensions: [{field: 'password', message: 'Wrong password'}],
             };
 
         return {

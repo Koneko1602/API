@@ -8,7 +8,7 @@ import {createPostHandler} from "./handlers/create-post.handler";
 import {updatePostHandler} from "./handlers/update-post.handler";
 import {deletePostHandler} from "./handlers/delete-post.handler";
 import {postInputDtoValidation} from "../validation/post.input-dto.validation-middlewares";
-import {createPostForBlogHandler} from "./handlers/createPostForBlogHandler";
+
 
 
 export const PostRouter = Router ({});
