@@ -1,4 +1,4 @@
-import { SortQueryFilterNumberType } from './sortQueryFilter.ntype';
+import { SortQueryFilterNumberType } from '../sortQueryFilter.ntype';
 
 /**
  * Объединенный тип для передачи в репозиторий findAllUsers.

@@ -1,7 +1,6 @@
-import {CommentViewModel} from "../domain/CommentsModel";
-import {CommentsCollection, UsersCollection} from "../../db/Mongo.db";
+import {CommentsCollection} from "../../db/Mongo.db";
 import {ObjectId, WithId} from "mongodb";
-import {IUserDB} from "../../Users/types/user.db.interface";
+
 import {ICommentDB} from "../types/comment.db.interface";
 
 
@@ -14,8 +13,8 @@ export const commentsRepository = {
     },
     async update(id: string, content: string): Promise<boolean> {
         const result = await CommentsCollection.updateOne(
-            { _id: new ObjectId(id) },
-            { $set: { content: content } }
+            {_id: new ObjectId(id)},
+            {$set: {content: content}}
         );
         // Проверяем, что документ был найден и обновлен
         return result.matchedCount === 1;

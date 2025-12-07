@@ -8,6 +8,7 @@ import {createPostHandler} from "./handlers/create-post.handler";
 import {updatePostHandler} from "./handlers/update-post.handler";
 import {deletePostHandler} from "./handlers/delete-post.handler";
 import {postInputDtoValidation} from "../validation/post.input-dto.validation-middlewares";
+import {getCommentsForPostHandler} from "./handlers/get-comment-list.handler";
 
 
 
@@ -23,6 +24,7 @@ PostRouter
         getPostHandler,
 
     )
+    .get('/:id/comments', getCommentsForPostHandler)
 
     .post(
         '',

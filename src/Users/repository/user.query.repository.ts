@@ -1,9 +1,9 @@
 import {IUserView} from "../types/user.view.interface";
 import {ObjectId, WithId} from "mongodb";
 import {IUserDB} from "../types/user.db.interface";
-import {IPagination} from "../pagination/pagination";
+import {IPagination} from "../../core/pagination/pagination";
 import {UsersCollection} from "../../db/Mongo.db";
-import {CleanFilterAndSearchType} from "../pagination/CleanFilterAndSearchType";
+import {CleanFilterAndSearchType} from "../../core/pagination/users/CleanFilterAndSearchType";
 
 
 export const usersQwRepository = {
@@ -74,7 +74,7 @@ export const usersQwRepository = {
             email: user.email,
             createdAt: user.createdAt.toISOString(),
         };
-    },
+    }, //маппинг из внутренней модели базы данных во внешнюю модель для отображения клиенту
     _checkObjectId(id: string): boolean {
         return ObjectId.isValid(id);
     },

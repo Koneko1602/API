@@ -1,9 +1,9 @@
 import {commentatorInfo} from "../domain/commentatorInfo";
 
-export type CreateCommentDto = {
+export interface ICommentView  {
     id: string;
     content: string;
     commentatorInfo: commentatorInfo;
-    createdAt: Date;
+    createdAt: string;
 
 }

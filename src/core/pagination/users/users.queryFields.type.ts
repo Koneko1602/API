@@ -1,4 +1,4 @@
-import {SortQueryFieldsType} from "../pagination/sortQueryFields.type";
+import {SortQueryFieldsType} from "../sortQueryFields.type";
 
 export type UsersQueryFieldsType = {
     searchLoginTerm?: string;
