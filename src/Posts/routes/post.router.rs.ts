@@ -9,6 +9,9 @@ import {updatePostHandler} from "./handlers/update-post.handler";
 import {deletePostHandler} from "./handlers/delete-post.handler";
 import {postInputDtoValidation} from "../validation/post.input-dto.validation-middlewares";
 import {getCommentsForPostHandler} from "./handlers/get-comment-list.handler";
+import {createCommentForPostController} from "./handlers/create-comment.handler";
+import {commentValidation} from "../../Comments/validation/validation.comment";
+import {baseAuthGuard} from "../../Authorization/api/guards/base.auth.guard";
 
 
 
@@ -36,7 +39,14 @@ PostRouter
 
 
      )
+    .post(
+        '/:id/comments',createCommentForPostController,
+        commentValidation.contentValidation,
+        inputValidationResultMiddleware,
+        baseAuthGuard,
+        idValidation
 
+    )
     .put(
         '/:id',
         superAdminGuardMiddleware,

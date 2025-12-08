@@ -3,3 +3,4 @@ export const POSTS_PATH = '/posts';
 export const TESTS_PATH = '/testing';
 export const USERS_PATH = '/users';
 export const AUTH_PATH = '/auth';
+export const COMM_PATH = '/comments';
