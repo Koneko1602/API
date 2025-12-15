@@ -56,18 +56,14 @@ export const postRepository = {
     },
 
     async findById(id: string): Promise<WithId<Post> | null> {
-        let objectId: ObjectId;
-        try {
-            // Безопасное создание ObjectId
-            objectId = new ObjectId(id);
-        } catch (e) {
-            // Если ID невалиден по формату, мы не можем его найти.
-            return null;
+        // 👇 ИСПРАВЛЕНИЕ: Добавляем проверку ObjectId
+        if (!ObjectId.isValid(id)) {
+            return null; // Если ID невалидный, не ищем в БД, возвращаем null
         }
 
-        return PostsCollection.findOne({_id: objectId});
+        return PostsCollection
+            .findOne({_id: new ObjectId(id)});
     },
-
 
     async findByIdOrFail(id: string): Promise<WithId<Post>> {
         let objectId: ObjectId;

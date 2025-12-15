@@ -5,7 +5,7 @@ import {ResultStatus} from "../../../Users/common/result/resultCode";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {Response} from "express";
 
-type PostParams = { postId: string };
+type PostParams = { id: string };
 type CommentQuery = SortQueryFilterNumberType;
 
 export async function getCommentsForPostHandler(
@@ -13,7 +13,7 @@ export async function getCommentsForPostHandler(
     res: Response,
 ) {
     try {
-        const postId = req.params.postId;
+        const postId = req.params.id;
         // Query параметры (pageNumber, pageSize и т.д.)
         const queryDto: CommentQuery = req.query;
 

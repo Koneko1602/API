@@ -7,26 +7,7 @@ import {setDefaultSortAndPaginationIfNotExist} from "../../../core/Helpers/set-d
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {mapToBlogDto} from "../mappers/Map-to-blog-dto";
 
-// export async function getBlogListHandler(
-//     req: Request<{}, {}, {}, BlogQueryInput>,
-//     res: Response,
-// ) {
-//     try {
-//         const queryInput = setDefaultSortAndPaginationIfNotExist(req.query);
-//
-//         const { items, totalCount } = await BlogsService.findMany(queryInput);
-//
-//         const blogsListOutput = mapToBlogListPaginatedOutput(items, {
-//             pageNumber: queryInput.pageNumber,
-//             pageSize: queryInput.pageSize,
-//             totalCount,
-//         });
-//
-//         res.status(HttpStatus.Ok).send(blogsListOutput);
-//     } catch (e: unknown) {
-//         errorsHandler(e, res);
-//     }
-// }
+
 export async function getBlogListHandler(
     req: Request<{}, {}, {}, BlogQueryInput>,
     res: Response

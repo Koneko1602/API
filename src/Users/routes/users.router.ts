@@ -41,7 +41,8 @@ usersRouter.get(
         const allUsers = await usersQwRepository.findAllUsers(finalQueryFilter);
 
         return res.status(200).send(allUsers);
-    },
+    }
+);
     usersRouter.post(
         "/",
         baseAuthGuard,
@@ -55,10 +56,12 @@ usersRouter.get(
             const userId = await usersService.create({login, password, email});
             const newUser = await usersQwRepository.findById(userId);
 
+            if (!newUser) {
+                return res.sendStatus(HttpStatus.InternalServerError);
+            }
             return res.status(HttpStatus.Created).send(newUser!);
         },
-    ))
-;
+    );
 
 usersRouter.delete(
     "/:id",

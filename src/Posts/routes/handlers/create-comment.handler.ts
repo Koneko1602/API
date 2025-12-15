@@ -1,8 +1,6 @@
 import {Comment, CommentViewModel} from "../../../Comments/domain/CommentsModel";
 import {HttpStatus} from "../../../core/types/http-statuses";
-import {errorsHandler} from "../../../core/errors/errors.handler";
 import {Request, Response} from 'express';
-import {commentatorInfo} from "../../../Comments/domain/commentatorInfo";
 import {CommentsService} from "../../../Comments/application/Comments.service";
 import {usersRepository} from "../../../Users/repository/UserRepository";
 
@@ -12,54 +10,40 @@ export async function createCommentForPostController(
     res: Response
 ) {
     try {
-        // --- 1. ПРОВЕРКА АУТЕНТИФИКАЦИИ (401) ---
-        // Если middleware не смог установить userId (токен отсутствует или невалиден),
-        // он должен был вернуть 401. Но, если он просто прошел дальше, то мы проверяем здесь.
-        // Ваш authMiddleware должен ОБЕСПЕЧИТЬ 401, если токен обязателен.
+        // 1. ПРОВЕРКА (Убедитесь, что статус 401)
         if (!req.userId) {
-            // Если вы хотите, чтобы middleware устанавливал 401, удалите эту проверку.
-            // Если middleware просто устанавливает req.userId = null, эта проверка нужна.
+            // Если токен невалиден/отсутствует (тест падает с 401)
             return res.sendStatus(HttpStatus.Unauthorized);
         }
 
         const currentUserId: string = req.userId;
-        const postId: string = req.params.postId;
+        const postId: string = req.params.id; // 👈 Имя параметра должно быть правильным
         const inputModel: Comment = req.body;
 
-        // --- 2. ПОЛУЧЕНИЕ ДАННЫХ КОММЕНТАТОРА ---
-        // Нам нужен логин пользователя для поля commentatorInfo.
+        // 2. Поиск пользователя (если здесь падает, то 403)
         const user = await usersRepository.findById(currentUserId);
-
-        // Крайне маловероятно, но проверяем, что пользователь существует в БД
         if (!user) {
-            // Пользователь аутентифицирован по токену, но не найден в БД
-            return res.sendStatus(HttpStatus.Unauthorized);
+            // Токен валиден, но пользователя нет в БД (тест падает с 403)
+            return res.sendStatus(HttpStatus.Forbidden);
         }
 
-        // Формируем объект, необходимый для сервиса комментариев
-        const currentUserInfo: commentatorInfo = {
-            userId: user._id.toString(), // user._id из БД (ObjectId) в string
-            userLogin: user.login,       // Логин из БД
-        };
-
-        // --- 3. ВЫЗОВ СЕРВИСА ---
+        // 3. Создание комментария (если здесь падает, то 404)
         const newComment: CommentViewModel | null = await CommentsService.createComment(
             postId,
-            inputModel, // Используем только content из body, как обычно
-            currentUserInfo
+            inputModel,
+            { userId: user._id.toString(), userLogin: user.login }
         );
 
-        // --- 4. ОБРАБОТКА РЕЗУЛЬТАТА (404 или 201) ---
         if (!newComment) {
-            // Если сервис вернул null, значит пост с таким postId не найден.
+            // Пост не найден
             return res.sendStatus(HttpStatus.NotFound);
         }
 
-        // Успех! Возвращаем созданный объект с кодом 201.
+        // 4. УСПЕХ (Тест проходит с 201)
         return res.status(HttpStatus.Created).send(newComment);
 
     } catch (e) {
-        console.error(`Ошибка при создании комментария для поста ${req.params.postId}:`, e);
+        // ...
         return res.sendStatus(HttpStatus.InternalServerError);
     }
 }

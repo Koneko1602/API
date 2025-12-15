@@ -11,7 +11,7 @@ import {postInputDtoValidation} from "../validation/post.input-dto.validation-mi
 import {getCommentsForPostHandler} from "./handlers/get-comment-list.handler";
 import {createCommentForPostController} from "./handlers/create-comment.handler";
 import {commentValidation} from "../../Comments/validation/validation.comment";
-import {baseAuthGuard} from "../../Authorization/api/guards/base.auth.guard";
+import {jwtAuthMiddleware} from "../../Authorization/api/guards/jwt.auth.middleware";
 
 
 
@@ -40,11 +40,12 @@ PostRouter
 
      )
     .post(
-        '/:id/comments',createCommentForPostController,
+        '/:id/comments',
+        jwtAuthMiddleware,
+        idValidation,
         commentValidation.contentValidation,
         inputValidationResultMiddleware,
-        baseAuthGuard,
-        idValidation
+        createCommentForPostController,
 
     )
     .put(

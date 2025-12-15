@@ -4,7 +4,7 @@ import {ResultStatus} from "../../../Users/common/result/resultCode";
 import {HttpStatus} from "../../../core/types/http-statuses";
 import {Response} from "express";
 
-type CommentParams = { commentId: string };
+type CommentParams = { id: string };
 type CommentInputModel = { content: string };
 type UserId = string;
 
@@ -14,7 +14,7 @@ export async function updateCommentController(
 ) {
     try {
         const result = await CommentsService.updateComment(
-            req.params.commentId,
+            req.params.id,
             req.userId,
             req.body,
             req.headers.authorization

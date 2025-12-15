@@ -4,13 +4,12 @@ import {CommentsService} from "../../application/Comments.service";
 import { RequestWithParamsAndCommentsId} from "../../../Users/errors/requests";
 import {Response} from "express"
 
-type CommentParams = { commentId: string };
-type CommentInputModel = { content: string };
+type CommentParams = { id: string };
 type UserId = string;
 
 export async function deleteCommentController(req: RequestWithParamsAndCommentsId<CommentParams, UserId>, res: Response) {
     // Вызов сервиса...
-    const result = await CommentsService.deleteComment(req.params.commentId, req.userId, req.headers.authorization);
+    const result = await CommentsService.deleteComment(req.params.id, req.userId, req.headers.authorization);
 
     switch (result.status) {
         case ResultStatus.Success:

@@ -5,6 +5,7 @@ import {inputValidationResultMiddleware} from "../../core/Middlewares/validation
 import {RequestWithBody} from "../../Users/errors/requests";
 import {LoginDto} from "../types/login.dto";
 import {authService} from "../domain/auth.service";
+import {ResultStatus} from "../../Users/common/result/resultCode";
 
 
 export const authRouter = Router();
@@ -18,9 +19,26 @@ authRouter.post(
     async (req: RequestWithBody<LoginDto>, res: Response) => {
         const { loginOrEmail, password } = req.body;
 
-        const accessToken = await authService.loginUser(loginOrEmail, password);
-        if (!accessToken) return res.sendStatus(HttpStatus.Unauthorized);
+        // 1. Получаем Result объект
+        const result = await authService.loginUser(loginOrEmail, password);
 
-        return res.status(HttpStatus.NoContent).send({ accessToken });
+        // 2. Проверяем статус: если ошибка аутентификации
+        if (result.status === ResultStatus.Unauthorized) {
+
+            // Отправляем ожидаемый 401 статус
+            return res.status(HttpStatus.Unauthorized).end();
+
+            // Если тесты требуют тело ответа, используйте:
+            // return res.status(HttpStatus.Unauthorized).json(createErrorMessages(result.extensions));
+        }
+
+        // 3. Если статус "Успех"
+        if (result.status === ResultStatus.Success) {
+            // Отправляем 200 OK и токен
+            return res.status(HttpStatus.Ok).send({ accessToken: result.data!.accessToken });
+        }
+
+        // На всякий случай обрабатываем неожиданный статус
+        return res.sendStatus(HttpStatus.InternalServerError);
     },
 );
