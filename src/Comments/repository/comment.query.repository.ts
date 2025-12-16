@@ -3,41 +3,52 @@ import {CommentsCollection} from "../../db/Mongo.db";
 import {ObjectId, WithId} from "mongodb";
 import {ICommentView} from "../types/comment.view.interface";
 import {ICommentDB} from "../types/comment.db.interface";
-import {SortQueryFilterNumberType} from "../../core/pagination/sortQueryFilter.ntype";
+import {SortQueryFieldsType} from "../../core/pagination/sortQueryFields.type";
+
 
 export const commentsQwRepository = {
     //
     async findAllComments(
         postId: string,
-        sortQueryDto: SortQueryFilterNumberType, // ✅ Используем объединенный чистый тип
+        // ✅ ИСПРАВЛЕНИЕ: Используем типобезопасный DTO для входящих параметров
+        sortQueryDto: SortQueryFieldsType,
     ): Promise<IPagination<ICommentView[]>> {
 
-        // 1. Деструктуризация всех данных (без as any, без дефолтов)
-        const {
-            sortBy,
-            sortDirection,
-            pageSize,
-            pageNumber,
-        } = sortQueryDto; // 👈 TypeScript теперь уверен во всех полях
+        // 1. ✅ БЕЗОПАСНОЕ ПРЕОБРАЗОВАНИЕ И ДЕФОЛТЫ
+
+        // Преобразование строки в число, с дефолтом 1, если невалидно
+        const pageNumber = Number(sortQueryDto.pageNumber) || 1;
+        // Преобразование строки в число, с дефолтом 10, если невалидно
+        const pageSize = Number(sortQueryDto.pageSize) || 10;
+
+        // sortBy: строка, по умолчанию 'createdAt'
+        const sortBy = sortQueryDto.sortBy || 'createdAt';
+
+        // 🛑 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Преобразование 'asc'/'desc' в 1/-1 для MongoDB
+        const rawSortDirection = sortQueryDto.sortDirection || 'desc';
+        // ✅ ИСПРАВЛЕНИЕ: Теперь TypeScript знает, что это 1 или -1
+        const sortDirectionValue: 1 | -1 = rawSortDirection === 'asc' ? 1 : -1;
 
         // 2. Формирование фильтра
-        const filter: any = {postId: postId};
+        // ✅ ИСПРАВЛЕНИЕ: Используем Record<string, any> вместо 'any' для фильтра, если это объект с известными строковыми ключами.
+        const filter: Record<string, any> = {postId: postId};
 
         // 3. Подсчет общего количества документов
         const totalCount = await CommentsCollection.countDocuments(filter);
 
-        // 4. Получение отфильтрованных, отсортированных и пагинированных данных
+        // 4. Получение данных
         const comments = await CommentsCollection
             .find(filter)
-            // ✅ MongoDB доволен
-            .sort({[sortBy]: sortDirection})
-            .skip((pageNumber - 1) * pageSize)
+            .sort({[sortBy]: sortDirectionValue}) // Используем 1/-1
+            .skip((pageNumber - 1) * pageSize) // Безопасная математика
             .limit(pageSize)
             .toArray();
 
         // 5. Формирование объекта пагинации
+        const pagesCount = Math.ceil(totalCount / pageSize);
+
         return {
-            pagesCount: Math.ceil(totalCount / pageSize),
+            pagesCount,
             page: pageNumber,
             pageSize: pageSize,
             totalCount,

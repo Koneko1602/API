@@ -7,9 +7,10 @@ import {commentatorInfo} from "../domain/commentatorInfo";
 import {ICommentView} from "../types/comment.view.interface";
 import {commentsQwRepository} from "../repository/comment.query.repository";
 import {ResultStatus} from "../../Users/common/result/resultCode";
-import {SortQueryFilterNumberType} from "../../core/pagination/sortQueryFilter.ntype";
+
 import {IPagination} from "../../core/pagination/pagination";
 import {ADMIN_TOKEN_HEADER} from "../../Authorization/api/guards/base.auth.guard";
+import {SortQueryFieldsType} from "../../core/pagination/sortQueryFields.type";
 
 type CommentInputModel = { content: string }; // Определяем, что приходит в теле запроса
 export const CommentsService = {
@@ -73,7 +74,7 @@ export const CommentsService = {
     },
     async findCommentsForPost(
         postId: string,
-        queryDto: SortQueryFilterNumberType
+        queryDto: SortQueryFieldsType
     ): Promise<Result<IPagination<ICommentView[]>>> { // Возвращает Result<Пагинация DTO>
 
         // 1. 🛑 БИЗНЕС-ЛОГИКА: Проверка существования поста (для 404)
@@ -113,7 +114,7 @@ export const CommentsService = {
         // 1. 🔍 ПРОВЕРКА СУЩЕСТВОВАНИЯ (404 Not Found)
         const comment = await commentsRepository.findById(commentId);
         if (!comment) {
-            return { status: ResultStatus.NotFound, extensions: [], data: null as any }; // 404
+            return {status: ResultStatus.NotFound, extensions: [], data: null as any}; // 404
         }
 
         // 2. 🛡️ ПРОВЕРКА ПРАВ: Владелец ИЛИ Администратор
@@ -132,9 +133,9 @@ export const CommentsService = {
         const isUpdated = await commentsRepository.update(commentId, inputModel.content);
 
         if (isUpdated) {
-            return { status: ResultStatus.Success, extensions: [], data: null }; // 204 No Content
+            return {status: ResultStatus.Success, extensions: [], data: null}; // 204 No Content
         }
-        return { status: ResultStatus.BadRequest, extensions: [], data: null as any };
+        return {status: ResultStatus.BadRequest, extensions: [], data: null as any};
     },
     async deleteComment(
         commentId: string,
@@ -144,7 +145,7 @@ export const CommentsService = {
 
         const comment = await commentsRepository.findById(commentId);
         if (!comment) {
-            return { status: ResultStatus.NotFound, extensions: [], data: null as any }; // 404
+            return {status: ResultStatus.NotFound, extensions: [], data: null as any}; // 404
         }
 
         // 🛡️ ПРОВЕРКА ПРАВ: Владелец ИЛИ Администратор
@@ -163,8 +164,8 @@ export const CommentsService = {
         const isDeleted = await commentsRepository.delete(commentId);
 
         if (isDeleted) {
-            return { status: ResultStatus.Success, extensions: [], data: null }; // 204 No Content
+            return {status: ResultStatus.Success, extensions: [], data: null}; // 204 No Content
         }
-        return { status: ResultStatus.BadRequest, extensions: [], data: null as any };
+        return {status: ResultStatus.BadRequest, extensions: [], data: null as any};
     }
 };
