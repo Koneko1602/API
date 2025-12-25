@@ -3,5 +3,9 @@ export interface IUserDB {
     email: string;
     passwordHash: string;
     createdAt: Date;
-
+    emailConfirmation: {
+        confirmationCode: string | null,
+        expirationDate: Date | null,
+        isConfirmed: boolean
+    }
 }

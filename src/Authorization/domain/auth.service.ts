@@ -5,6 +5,10 @@ import {Result} from "../../Users/common/result/result.type";
 import {jwtService} from "../adapters/jwt.service";
 import {WithId} from "mongodb";
 import {IUserDB} from "../../Users/types/user.db.interface";
+import {randomUUID} from "node:crypto";
+import {nodemailerService} from "../adapters/nodemailer.service";
+import {emailExamples} from "../adapters/emailExamples";
+import {add} from "date-fns/add";
 
 export const authService = {
 
@@ -59,4 +63,41 @@ export const authService = {
             extensions: [],
         };
     },
+
+
+    async registerUser(login: string, pass: string, email: string): Promise<IUserDB | null> {
+        const user = await usersRepository.findByLoginOrEmail(email);
+        if (user) return null;
+        //проверить существует ли уже юзер с таким логином или почтой и если да - не регистрировать
+
+        const passwordHash = await bcryptService.generateHash(pass)//создать хэш пароля
+        const newUser: IUserDB = { // сформировать dto юзера
+            login,
+            email,
+            passwordHash,
+            createdAt: new Date(),
+            emailConfirmation: {    // доп поля необходимые для подтверждения
+                confirmationCode: randomUUID(),
+                expirationDate: add(new Date(), {
+                    hours: 1,
+                    minutes: 30,
+                }),
+                isConfirmed: false
+            }
+        };
+        await usersRepository.create(newUser); // сохранить юзера в базе данных
+
+//отправку сообщения лучше обернуть в try-catch, чтобы при ошибке(например отвалиться отправка) приложение не падало
+        try {
+            await nodemailerService.sendEmail(//отправить сообщение на почту юзера с кодом подтверждения
+                newUser.email,
+                newUser.emailConfirmation.confirmationCode,
+                emailExamples.registrationEmail);
+
+        } catch (e: unknown) {
+            console.error('Send email error', e); //залогировать ошибку при отправке сообщения
+        }
+        return newUser;
+    },
+
 };

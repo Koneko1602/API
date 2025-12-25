@@ -24,4 +24,9 @@ export const usersRepository = {
             $or: [{email: loginOrEmail}, {login: loginOrEmail}],
         });
     },
+    // async findByEmail(email: string): Promise<WithId<IUserDB> | null> {
+    //     return UsersCollection.findOne({ email });
+    // },
+    //
+
 };

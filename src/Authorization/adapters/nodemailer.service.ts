@@ -1,14 +1,14 @@
-import nodemailer from "nodemailer";
-import {appConfig} from "../../Users/common/config";
+import nodemailer from 'nodemailer';
+import { appConfig} from "../../core/settings/config";
 
 export const nodemailerService = {
     async sendEmail(
         email: string,
         code: string,
-        template: (code: string) => string,
+        template: (code: string) => string
     ): Promise<boolean> {
         let transporter = nodemailer.createTransport({
-            service: "gmail",
+            service: 'gmail',
             auth: {
                 user: appConfig.EMAIL,
                 pass: appConfig.EMAIL_PASS,
@@ -18,7 +18,7 @@ export const nodemailerService = {
         let info = await transporter.sendMail({
             from: '"Kek 👻" <codeSender>',
             to: email,
-            subject: "Your code is here",
+            subject: 'Your code is here',
             html: template(code), // html body
         });
 
