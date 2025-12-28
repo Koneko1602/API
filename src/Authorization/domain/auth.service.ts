@@ -86,12 +86,15 @@ export const authService = {
             }
         };
         await usersRepository.create(newUser); // сохранить юзера в базе данных
-
+        const confirmationCode = newUser.emailConfirmation.confirmationCode;
+        if (confirmationCode === null) {
+            throw new Error('Confirmation code is unexpectedly null');  // Это не должно произойти в registerUser, но для безопасности
+        }
 //отправку сообщения лучше обернуть в try-catch, чтобы при ошибке(например отвалиться отправка) приложение не падало
         try {
             await nodemailerService.sendEmail(//отправить сообщение на почту юзера с кодом подтверждения
                 newUser.email,
-                newUser.emailConfirmation.confirmationCode,
+                confirmationCode,
                 emailExamples.registrationEmail);
 
         } catch (e: unknown) {
@@ -99,5 +102,53 @@ export const authService = {
         }
         return newUser;
     },
+    async confirmRegistration(code: string): Promise<Result<null>> {
+        const user = await usersRepository.findByConfirmationCode(code);
+        if (!user) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Invalid code',
+                extensions: [{ field: 'code', message: 'User not found' }],  // Добавьте явные extensions, если нужно
+                data: null  // Исправление: Добавьте data: null
+            };
+        }
 
+        // Исправление TS18047: Используйте проверку null или optional chaining для expirationDate
+        const isExpired = user.emailConfirmation.expirationDate
+            ? user.emailConfirmation.expirationDate < new Date()
+            : true;  // Считайте null как истекший для безопасности
+
+        if (user.emailConfirmation.isConfirmed || isExpired) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Invalid code',
+                extensions: [{ field: 'code', message: 'Invalid, expired or already used' }],
+                data: null  // Исправление: Добавьте data: null
+            };
+        }
+
+        // Обновление
+        const updatedConfirmation = {
+            confirmationCode: null,
+            expirationDate: null,
+            isConfirmed: true
+        };
+
+        const updated = await usersRepository.updateConfirmation(user._id.toString(), updatedConfirmation);
+        if (!updated) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Update failed',  // Добавьте, если нужно для ясности
+                extensions: [],  // Пустые extensions ок
+                data: null  // Исправление: Добавьте data: null
+            };
+        }
+
+        return {
+            status: ResultStatus.Success,
+            errorMessage: undefined,  // Или опустите, если опционально
+            extensions: [],
+            data: null
+        };
+    }
 };
