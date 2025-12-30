@@ -4,7 +4,7 @@ import {AUTH_PATH, BLOGS_PATH, COMM_PATH, POSTS_PATH, TESTS_PATH, USERS_PATH} fr
 import {PostRouter} from "./Posts/routes/post.router.rs";
 import {TestRouter} from "./tests/routers/Test.router";
 import {usersRouter} from "./Users/routes/users.router";
-import {authRouter} from "./Authorization/api/auth.router";
+import {authRouter} from "./Authorization/routes/auth.router";
 import {commentRouter} from "./Comments/routes/comment.router";
 
 export const setupApp = (app: Express) => {
