@@ -150,5 +150,65 @@ export const authService = {
             extensions: [],
             data: null
         };
+    },
+    async resendConfirmationEmail(email: string): Promise<Result<null>> {
+        const user = await usersRepository.findByLoginOrEmail(email);
+        if (!user) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Email not found',
+                extensions: [{ field: 'email', message: 'Email not found' }],
+                data: null
+            };
+        }
+
+        if (user.emailConfirmation.isConfirmed) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Email already confirmed',
+                extensions: [{ field: 'email', message: 'Email already confirmed' }],
+                data: null
+            };
+        }
+
+        // Генерация нового кода
+        const newCode = randomUUID();
+        const newExpiration = add(new Date(), { hours: 1, minutes: 30 });
+
+        // Обновление в БД (нужен метод updateConfirmation в репозитории, как раньше)
+        const updated = await usersRepository.updateConfirmation(user._id.toString(), {
+            confirmationCode: newCode,
+            expirationDate: newExpiration,
+            isConfirmed: false
+        });
+
+        if (!updated) {
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Update failed',
+                extensions: [],
+                data: null
+            };
+        }
+
+        // Отправка email
+        try {
+            await nodemailerService.sendEmail(email, newCode, emailExamples.registrationEmail);
+        } catch (e: unknown) {
+            console.error('Resend email error', e);
+            return {
+                status: ResultStatus.BadRequest,
+                errorMessage: 'Email sending failed',
+                extensions: [],
+                data: null
+            };
+        }
+
+        return {
+            status: ResultStatus.Success,
+            extensions: [],
+            data: null
+        };
     }
+
 };

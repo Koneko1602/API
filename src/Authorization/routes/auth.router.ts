@@ -1,4 +1,4 @@
-import { Response, Router } from "express";
+import {Response, Router} from "express";
 import {HttpStatus} from "../../core/types/http-statuses";
 import {userValidation} from "../../Users/validation/validation.user";
 import {inputValidationResultMiddleware} from "../../core/Middlewares/validation/input-validation-result.middleware";
@@ -20,7 +20,7 @@ authRouter.post(
     inputValidationResultMiddleware,
 
     async (req: RequestWithBody<LoginDto>, res: Response) => {
-        const { loginOrEmail, password } = req.body;
+        const {loginOrEmail, password} = req.body;
 
         // 1. Получаем Result объект
         const result = await authService.loginUser(loginOrEmail, password);
@@ -37,7 +37,7 @@ authRouter.post(
         // 3. Если статус "Успех"
         if (result.status === ResultStatus.Success) {
             // Отправляем 200 OK и токен
-            return res.status(HttpStatus.Ok).send({ accessToken: result.data!.accessToken });
+            return res.status(HttpStatus.Ok).send({accessToken: result.data!.accessToken});
         }
 
         // На всякий случай обрабатываем неожиданный статус
@@ -57,7 +57,7 @@ authRouter.post(
 
         // Основная логика
         async (req: RequestWithBody<{ code: string }>, res: Response) => {
-            const { code } = req.body;
+            const {code} = req.body;
 
             const result = await authService.confirmRegistration(code);
 
@@ -83,11 +83,67 @@ authRouter.post(
             }
 
             return res.sendStatus(HttpStatus.NoContent); // 204
-        }
+        },
+
+        authRouter.post(
+            '/registration',
+            // Валидация (используем твои из userValidation)
+            userValidation.loginValidation,    // Проверяет дубликат login
+            userValidation.passwordValidation,
+            userValidation.emailValidation,    // Проверяет дубликат email
+
+            inputValidationResultMiddleware,
+
+            async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
+                const { login, password, email } = req.body;
+
+                const result = await authService.registerUser(login, password, email);
+
+                // Исправление: Вместо result.status — проверяем if (!result) (result — IUserDB | null)
+                if (!result) {
+                    // Формируем ошибки (дубликат или другие — можно расширить, если сервис вернёт больше данных)
+                    const errors = [
+                        { field: 'login', message: 'Login already exists' },  // Или динамически, если сервис даёт детали
+                        { field: 'email', message: 'Email already exists' }   // Пример fallback
+                    ];
+
+                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors));
+                }
+
+                // Успех: пользователь создан, email отправлен
+                return res.sendStatus(HttpStatus.NoContent);  // 204
+            }
+        ),
+        authRouter.post(
+            '/registration-email-resending',
+            // Валидация — используем твою emailValidation (проверяет формат и существование, но для ресенда мы проверяем, что email НЕ подтверждён — это в сервисе)
+            userValidation.emailValidation,  // Проверяет формат email и существование (но в сервисе добавим логику, что если уже подтверждён — ошибка)
+
+            // Middleware обработки ошибок валидации
+            inputValidationResultMiddleware,
+
+            // Основная логика
+            async (req: RequestWithBody<{ email: string }>, res: Response) => {
+                const {email} = req.body;
+
+                const result = await authService.resendConfirmationEmail(email);
+
+                if (result.status !== ResultStatus.Success) {
+                    const errors = result.extensions.length > 0
+                        ? result.extensions.map(ext => ({
+                            message: ext.message,
+                            field: ext.field ?? 'email'
+                        }))
+                        : [{
+                            field: 'email',
+                            message: result.errorMessage || 'Email not found or already confirmed'
+                        }];
+
+                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
+                }
+
+                return res.sendStatus(HttpStatus.NoContent);  // 204
+            }
+        )
     )
-
-
-
-
-
-);
+)
