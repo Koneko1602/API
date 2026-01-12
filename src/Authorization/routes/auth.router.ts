@@ -87,7 +87,6 @@ authRouter.post(
 
         authRouter.post(
             '/registration',
-            // Валидация (используем твои из userValidation)
             userValidation.loginValidation,    // Проверяет дубликат login
             userValidation.passwordValidation,
             userValidation.emailValidation,    // Проверяет дубликат email
@@ -99,18 +98,17 @@ authRouter.post(
 
                 const result = await authService.registerUser(login, password, email);
 
-                // Исправление: Вместо result.status — проверяем if (!result) (result — IUserDB | null)
-                if (!result) {
-                    // Формируем ошибки (дубликат или другие — можно расширить, если сервис вернёт больше данных)
-                    const errors = [
-                        { field: 'login', message: 'Login already exists' },  // Или динамически, если сервис даёт детали
-                        { field: 'email', message: 'Email already exists' }   // Пример fallback
-                    ];
+                if (result.status !== ResultStatus.Success) {
+                    const errors = result.extensions.length > 0
+                        ? result.extensions.map(ext => ({
+                            message: ext.message,
+                            field: ext.field ?? 'general'
+                        }))
+                        : [{ field: 'general', message: result.errorMessage || 'Registration failed' }];
 
-                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors));
+                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
                 }
 
-                // Успех: пользователь создан, email отправлен
                 return res.sendStatus(HttpStatus.NoContent);  // 204
             }
         ),
