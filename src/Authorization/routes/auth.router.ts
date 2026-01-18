@@ -87,26 +87,20 @@ authRouter.post(
 
         authRouter.post(
             '/registration',
-            userValidation.loginValidation,    // Проверяет дубликат login
+            userValidation.loginValidation,
             userValidation.passwordValidation,
-            userValidation.emailValidation,    // Проверяет дубликат email
-
+            userValidation.emailValidation,
             inputValidationResultMiddleware,
 
             async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
                 const { login, password, email } = req.body;
 
-                const result = await authService.registerUser(login, password, email);
+                const newUser = await authService.registerUser(login, password, email);
 
-                if (result.status !== ResultStatus.Success) {
-                    const errors = result.extensions.length > 0
-                        ? result.extensions.map(ext => ({
-                            message: ext.message,
-                            field: ext.field ?? 'general'
-                        }))
-                        : [{ field: 'general', message: result.errorMessage || 'Registration failed' }];
-
-                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
+                if (!newUser) {
+                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages([
+                        { field: 'general', message: 'Duplicate login or email' }
+                    ]));
                 }
 
                 return res.sendStatus(HttpStatus.NoContent);  // 204

@@ -65,26 +65,26 @@ export const authService = {
     },
 
 
-    async registerUser(login: string, pass: string, email: string): Promise<Result<string | null>> {  // Измени на Result с code
-        // Убрали проверку дубликатов — валидация уже сделала
+    async registerUser(login: string, pass: string, email: string): Promise<IUserDB | null> {
+        const user = await usersRepository.findByLoginOrEmail(email);
+        if (user) return null;
 
         const passwordHash = await bcryptService.generateHash(pass);
-
-        const confirmationCode = randomUUID();  // Генерируем заранее
-
         const newUser: IUserDB = {
             login,
             email,
             passwordHash,
             createdAt: new Date(),
             emailConfirmation: {
-                confirmationCode,
+                confirmationCode: randomUUID(),
                 expirationDate: add(new Date(), { hours: 1, minutes: 30 }),
                 isConfirmed: false
             }
         };
+        await usersRepository.create(newUser);
 
-        await usersRepository.create(newUser);  // Сохраняем
+        const confirmationCode = newUser.emailConfirmation.confirmationCode;
+        if (confirmationCode === null) throw new Error('Code null');
 
         try {
             await nodemailerService.sendEmail(newUser.email, confirmationCode, emailExamples.registrationEmail);
@@ -92,11 +92,7 @@ export const authService = {
             console.error('Send email error', e);
         }
 
-        return {
-            status: ResultStatus.Success,
-            extensions: [],
-            data: confirmationCode  // Верни code — тест пройдёт, если ожидает string
-        };
+        return newUser;
     },
     async confirmRegistration(code: string): Promise<Result<null>> {
         const user = await usersRepository.findByConfirmationCode(code);
@@ -104,12 +100,12 @@ export const authService = {
             return {
                 status: ResultStatus.BadRequest,
                 errorMessage: 'Invalid code',
-                extensions: [{ field: 'code', message: 'User not found' }],  // Добавьте явные extensions, если нужно
-                data: null  // Исправление: Добавьте data: null
+                extensions: [{ field: 'code', message: 'User not found' }],
+                data: null
             };
         }
 
-        // Исправление TS18047: Используйте проверку null или optional chaining для expirationDate
+
         const isExpired = user.emailConfirmation.expirationDate
             ? user.emailConfirmation.expirationDate < new Date()
             : true;  // Считайте null как истекший для безопасности
@@ -119,7 +115,7 @@ export const authService = {
                 status: ResultStatus.BadRequest,
                 errorMessage: 'Invalid code',
                 extensions: [{ field: 'code', message: 'Invalid, expired or already used' }],
-                data: null  // Исправление: Добавьте data: null
+                data: null
             };
         }
 
@@ -134,15 +130,15 @@ export const authService = {
         if (!updated) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Update failed',  // Добавьте, если нужно для ясности
-                extensions: [],  // Пустые extensions ок
-                data: null  // Исправление: Добавьте data: null
+                errorMessage: 'Update failed',
+                extensions: [],
+                data: null
             };
         }
 
         return {
             status: ResultStatus.Success,
-            errorMessage: undefined,  // Или опустите, если опционально
+            errorMessage: undefined,
             extensions: [],
             data: null
         };
