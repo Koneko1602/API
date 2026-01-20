@@ -30,7 +30,7 @@ const loginOrEmailValidation = body("loginOrEmail")
 const loginValidation = body("login")
     .isString()
     .trim()
-    .isLength({min: 3, max: 10})
+    .isLength({min: 6, max: 30})
     .withMessage("login is not correct")
     .custom(
         async (login: string) => {

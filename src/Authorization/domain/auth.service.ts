@@ -9,6 +9,7 @@ import {randomUUID} from "node:crypto";
 import {nodemailerService} from "../adapters/nodemailer.service";
 import {emailExamples} from "../adapters/emailExamples";
 import {add} from "date-fns/add";
+import {UsersCollection} from "../../db/Mongo.db";
 
 export const authService = {
 
@@ -65,26 +66,43 @@ export const authService = {
     },
 
 
-    async registerUser(login: string, pass: string, email: string): Promise<IUserDB | null> {
-        const user = await usersRepository.findByLoginOrEmail(email);
-        if (user) return null;
+    async registerUser(login: string, pass: string, email: string): Promise<Result<string | null>> {
+        // Проверяем login и email ПО ОТДЕЛЬНОСТИ
+        const existingLogin = await UsersCollection.findOne({ login: login.trim() });
+        const existingEmail = await UsersCollection.findOne({ email: email.trim() });
 
+        if (existingLogin || existingEmail) {
+            const errors = [];
+            if (existingLogin) {
+                errors.push({ field: 'login', message: 'Login already exists' });
+            }
+            if (existingEmail) {
+                errors.push({ field: 'email', message: 'Email already exists' });
+            }
+
+            return {
+                status: ResultStatus.BadRequest,
+                extensions: errors,
+                data: null,
+                errorMessage: 'Login or email already exists'
+            };
+        }
         const passwordHash = await bcryptService.generateHash(pass);
+        const confirmationCode = randomUUID();
+
         const newUser: IUserDB = {
             login,
             email,
             passwordHash,
             createdAt: new Date(),
             emailConfirmation: {
-                confirmationCode: randomUUID(),
+                confirmationCode,
                 expirationDate: add(new Date(), { hours: 1, minutes: 30 }),
                 isConfirmed: false
             }
         };
-        await usersRepository.create(newUser);
 
-        const confirmationCode = newUser.emailConfirmation.confirmationCode;
-        if (confirmationCode === null) throw new Error('Code null');
+        await usersRepository.create(newUser);
 
         try {
             await nodemailerService.sendEmail(newUser.email, confirmationCode, emailExamples.registrationEmail);
@@ -92,45 +110,43 @@ export const authService = {
             console.error('Send email error', e);
         }
 
-        return newUser;
+        return {
+            status: ResultStatus.Success,
+            extensions: [],
+            data: confirmationCode  // Тест получит string
+        };
     },
     async confirmRegistration(code: string): Promise<Result<null>> {
         const user = await usersRepository.findByConfirmationCode(code);
         if (!user) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Invalid code',
                 extensions: [{ field: 'code', message: 'User not found' }],
                 data: null
             };
         }
 
-
         const isExpired = user.emailConfirmation.expirationDate
             ? user.emailConfirmation.expirationDate < new Date()
-            : true;  // Считайте null как истекший для безопасности
+            : true;
 
         if (user.emailConfirmation.isConfirmed || isExpired) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Invalid code',
                 extensions: [{ field: 'code', message: 'Invalid, expired or already used' }],
                 data: null
             };
         }
 
-        // Обновление
-        const updatedConfirmation = {
+        const updated = await usersRepository.updateConfirmation(user._id.toString(), {
             confirmationCode: null,
             expirationDate: null,
             isConfirmed: true
-        };
+        });
 
-        const updated = await usersRepository.updateConfirmation(user._id.toString(), updatedConfirmation);
         if (!updated) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Update failed',
                 extensions: [],
                 data: null
             };
@@ -138,17 +154,15 @@ export const authService = {
 
         return {
             status: ResultStatus.Success,
-            errorMessage: undefined,
             extensions: [],
             data: null
         };
     },
     async resendConfirmationEmail(email: string): Promise<Result<null>> {
-        const user = await usersRepository.findByLoginOrEmail(email);
+        const user = await usersRepository.findByEmail(email);
         if (!user) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Email not found',
                 extensions: [{ field: 'email', message: 'Email not found' }],
                 data: null
             };
@@ -157,17 +171,14 @@ export const authService = {
         if (user.emailConfirmation.isConfirmed) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Email already confirmed',
                 extensions: [{ field: 'email', message: 'Email already confirmed' }],
                 data: null
             };
         }
 
-        // Генерация нового кода
         const newCode = randomUUID();
         const newExpiration = add(new Date(), { hours: 1, minutes: 30 });
 
-        // Обновление в БД (нужен метод updateConfirmation в репозитории, как раньше)
         const updated = await usersRepository.updateConfirmation(user._id.toString(), {
             confirmationCode: newCode,
             expirationDate: newExpiration,
@@ -177,23 +188,15 @@ export const authService = {
         if (!updated) {
             return {
                 status: ResultStatus.BadRequest,
-                errorMessage: 'Update failed',
                 extensions: [],
                 data: null
             };
         }
 
-        // Отправка email
         try {
             await nodemailerService.sendEmail(email, newCode, emailExamples.registrationEmail);
         } catch (e: unknown) {
             console.error('Resend email error', e);
-            return {
-                status: ResultStatus.BadRequest,
-                errorMessage: 'Email sending failed',
-                extensions: [],
-                data: null
-            };
         }
 
         return {
@@ -202,5 +205,6 @@ export const authService = {
             data: null
         };
     }
+
 
 };

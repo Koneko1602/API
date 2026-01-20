@@ -87,20 +87,36 @@ authRouter.post(
 
         authRouter.post(
             '/registration',
-            userValidation.loginValidation,
+            // Валидация (используем твои из userValidation)
+            userValidation.loginValidation,    // Проверяет дубликат login
             userValidation.passwordValidation,
-            userValidation.emailValidation,
+            userValidation.emailValidation,    // Проверяет дубликат email
             inputValidationResultMiddleware,
 
             async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
                 const { login, password, email } = req.body;
 
-                const newUser = await authService.registerUser(login, password, email);
+                const result = await authService.registerUser(login, password, email);
 
-                if (!newUser) {
-                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages([
-                        { field: 'general', message: 'Duplicate login or email' }
-                    ]));
+                if (result.status !== ResultStatus.Success) {
+                    // Преобразование extensions, чтобы field был всегда string
+                    const safeErrors: FieldError[] = (result.extensions || []).map(ext => ({
+                        message: ext.message,
+                        field: ext.field ?? 'general'  // Заменяем null на 'general' (или 'code')
+                    }));
+
+                    // Если extensions пустой — fallback ошибка
+                    if (safeErrors.length === 0) {
+                        safeErrors.push({
+                            message: result.errorMessage || 'Registration failed (duplicate or invalid data)',
+                            field: 'general'
+                        });
+                    }
+
+                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(safeErrors));
+                }
+                if (result.status === ResultStatus.Success){
+                    return res.sendStatus(HttpStatus.NoContent);
                 }
 
                 return res.sendStatus(HttpStatus.NoContent);  // 204
