@@ -72,6 +72,7 @@ export const authService = {
         const existingEmail = await UsersCollection.findOne({ email: email.trim() });
 
         if (existingLogin || existingEmail) {
+            console.log('[SERVICE-REG] DUPLICATE FOUND → returning null');
             const errors = [];
             if (existingLogin) {
                 errors.push({ field: 'login', message: 'Login already exists' });
@@ -109,7 +110,7 @@ export const authService = {
         } catch (e: unknown) {
             console.error('Send email error', e);
         }
-
+        console.log(`[SERVICE-REG] SUCCESS: code generated = "${confirmationCode}"`);
         return {
             status: ResultStatus.Success,
             extensions: [],

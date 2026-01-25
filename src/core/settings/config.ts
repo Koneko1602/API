@@ -10,6 +10,6 @@ export const appConfig = {
     AC_TIME: (process.env.AC_TIME ||'1h') as StringValue,
     RT_SECRET: (process.env.RT_SECRET|| 'gkflgkfkgjdlfgjvf'),
     DB_TYPE: process.env.DB_TYPE,
-    EMAIL: process.env.EMAIL as string,
-    EMAIL_PASS: process.env.EMAIL_PASS as string,
+    EMAIL: 'dominic49@ethereal.email' as string,
+    EMAIL_PASS: 'pVV55tjfHYtncaXJC9' as string,
 }
