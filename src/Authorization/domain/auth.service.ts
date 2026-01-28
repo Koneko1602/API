@@ -67,7 +67,7 @@ export const authService = {
 
 
     async registerUser(login: string, pass: string, email: string): Promise<Result<string | null>> {
-        // Проверяем login и email ПО ОТДЕЛЬНОСТИ
+       // Проверяем login и email ПО ОТДЕЛЬНОСТИ
         const existingLogin = await UsersCollection.findOne({ login: login.trim() });
         const existingEmail = await UsersCollection.findOne({ email: email.trim() });
 

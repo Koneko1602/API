@@ -42,6 +42,7 @@ export const inputValidationResultMiddleware = (
         .array({ onlyFirstError: true });
 
     if (errors.length > 0) {
+        console.log('[VALIDATION FAIL] Errors:', errors);  // ← лог ошибок
         res.status(HttpStatus.BadRequest).json(createErrorMessages(errors));
         return;
     }

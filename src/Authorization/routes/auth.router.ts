@@ -95,9 +95,9 @@ authRouter.post(
 
             async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
                 const { login, password, email } = req.body;
-
+                console.log('[REG ROUTER] Received body:', req.body);
                 const result = await authService.registerUser(login, password, email);
-
+                console.log('[REG ROUTER] Service result status:', result.status);
                 if (result.status !== ResultStatus.Success) {
                     // Преобразование extensions, чтобы field был всегда string
                     const safeErrors: FieldError[] = (result.extensions || []).map(ext => ({
@@ -118,7 +118,7 @@ authRouter.post(
                 if (result.status === ResultStatus.Success){
                     return res.sendStatus(HttpStatus.NoContent);
                 }
-
+                console.log('[REG ROUTER] Returning 204');
                 return res.sendStatus(HttpStatus.NoContent);  // 204
             }
         ),
@@ -133,9 +133,9 @@ authRouter.post(
             // Основная логика
             async (req: RequestWithBody<{ email: string }>, res: Response) => {
                 const {email} = req.body;
-
+                console.log('[RESEND/CONFIRM] Received:', req.body);
                 const result = await authService.resendConfirmationEmail(email);
-
+                console.log('[RESEND/CONFIRM] Received:', req.body);
                 if (result.status !== ResultStatus.Success) {
                     const errors = result.extensions.length > 0
                         ? result.extensions.map(ext => ({
