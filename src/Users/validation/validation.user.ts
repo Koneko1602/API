@@ -8,17 +8,17 @@ const emailValidation = body("email")
     .isLength({min: 1})
     .isEmail()
     .withMessage("email is not correct")
-    .custom(
-        async (email: string) => {
-            const user = await usersRepository.findByLoginOrEmail(email);
-            if (user) {
-                throw new Error("email already exist");
-
-            }
-            return true;
-
-
-        });
+    // .custom(
+    //     async (email: string) => {
+    //         const user = await usersRepository.findByLoginOrEmail(email);
+    //         if (user) {
+    //             throw new Error("email already exist");
+    //
+    //         }
+    //         return true;
+    //
+    //
+    //     });
 
 const loginOrEmailValidation = body("loginOrEmail")
     .isString()
@@ -30,17 +30,17 @@ const loginOrEmailValidation = body("loginOrEmail")
 const loginValidation = body("login")
     .isString()
     .trim()
-    .isLength({min: 6, max: 30})
+    .isLength({min: 3, max: 10})
     .withMessage("login is not correct")
-    .custom(
-        async (login: string) => {
-            const user = await usersRepository.findByLoginOrEmail(login);
-            if (user) {
-                throw new Error("login already exist");
-            }
-            return true;
-        }
-    );
+    // .custom(
+    //     async (login: string) => {
+    //         const user = await usersRepository.findByLoginOrEmail(login);
+    //         if (user) {
+    //             throw new Error("login already exist");
+    //         }
+    //         return true;
+    //     }
+    // );
 
 
 const passwordValidation = body("password")

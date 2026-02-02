@@ -138,7 +138,7 @@ export const authService = {
                 data: null
             };
         }
-
+        console.log('[CONFIRM] Updating user:', user._id, 'to confirmed');
         const updated = await usersRepository.updateConfirmation(user._id.toString(), {
             confirmationCode: null,
             expirationDate: null,
@@ -160,8 +160,10 @@ export const authService = {
         };
     },
     async resendConfirmationEmail(email: string): Promise<Result<null>> {
+        console.log('[RESEND] Requested for email:', email);
         const user = await usersRepository.findByEmail(email);
         if (!user) {
+            console.log('[RESEND] User not found → 400');
             return {
                 status: ResultStatus.BadRequest,
                 extensions: [{ field: 'email', message: 'Email not found' }],
@@ -170,13 +172,14 @@ export const authService = {
         }
 
         if (user.emailConfirmation.isConfirmed) {
+            console.log('[RESEND] Email already confirmed → 400');
             return {
                 status: ResultStatus.BadRequest,
                 extensions: [{ field: 'email', message: 'Email already confirmed' }],
                 data: null
             };
         }
-
+        console.log('[RESEND] User exists and not confirmed → resending');
         const newCode = randomUUID();
         const newExpiration = add(new Date(), { hours: 1, minutes: 30 });
 
@@ -199,7 +202,7 @@ export const authService = {
         } catch (e: unknown) {
             console.error('Resend email error', e);
         }
-
+        console.log('[RESEND] Success → 204');
         return {
             status: ResultStatus.Success,
             extensions: [],

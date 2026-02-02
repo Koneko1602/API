@@ -25,16 +25,16 @@ usersRouter.get(
         res: Response<IPagination<IUserView[]>>,
     ) => {
 
-        // 1. Получаем чистые данные пагинации/сортировки
+
         const cleanSortPagination = sortQueryFieldsUtil(req.query);
 
-        // 2. Извлекаем необработанные параметры поиска
+
         const {searchLoginTerm, searchEmailTerm} = req.query;
 
         // 3. 🚀 ФОРМИРУЕМ ПОЛНЫЙ, ЧИСТЫЙ ОБЪЕКТ
         const finalQueryFilter = {
-            ...cleanSortPagination, // Чистые pageNumber, pageSize, sortBy, sortDirection (1|-1)
-            searchLoginTerm,        // Необработанные, но нужные для фильтрации
+            ...cleanSortPagination,
+            searchLoginTerm,
             searchEmailTerm,
         };
 

@@ -9,6 +9,7 @@ import {ResultStatus} from "../../Users/common/result/resultCode";
 import {body} from "express-validator";
 import {createErrorsMessages} from "../../core/errors/FieldError";
 import {FieldError} from "../../core/errors/APIErrorResult";
+import {inputValidationAuthMiddleware} from "../../core/Middlewares/validation/validation-auth.middleware";
 
 
 export const authRouter = Router();
@@ -91,7 +92,7 @@ authRouter.post(
             userValidation.loginValidation,    // Проверяет дубликат login
             userValidation.passwordValidation,
             userValidation.emailValidation,    // Проверяет дубликат email
-            inputValidationResultMiddleware,
+            inputValidationAuthMiddleware,
 
             async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
                 const { login, password, email } = req.body;
