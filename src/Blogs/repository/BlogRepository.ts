@@ -1,10 +1,9 @@
 import {BlogInputModel, Blog} from "../domain/BlogModel"
 import {ObjectId, WithId} from "mongodb";
-import {BlogsCollection, PostsCollection} from "../../db/Mongo.db";
+import {BlogsCollection} from "../../db/Mongo.db";
 import {RepositoryNotFoundError} from "../../core/errors/repository-not-found.error";
 import {BlogQueryInput} from "../routes/input/blog-query.input";
-import {PostQueryInput} from "../../Posts/routes/input/post-query.input";
-import {Post} from "../../Posts/domain/PostModel";
+
 
 
 export const blogRepository = {

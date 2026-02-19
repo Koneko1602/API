@@ -13,28 +13,103 @@ import {UsersCollection} from "../../db/Mongo.db";
 
 export const authService = {
 
+    // async loginUser(
+    //     loginOrEmail: string,
+    //     password: string,
+    // ): Promise<Result<{ accessToken: string } | null>> {
+    //     const result = await this.checkUserCredentials(loginOrEmail, password);
+    //     if (result.status !== ResultStatus.Success)
+    //         return {
+    //             status: ResultStatus.Unauthorized,
+    //             errorMessage: 'Unauthorized',
+    //             extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
+    //             data: null,
+    //         };
+    //
+    //     const accessToken = await jwtService.createToken(result.data!._id.toString());
+    //
+    //     return {
+    //         status: ResultStatus.Success,
+    //         data: {accessToken},
+    //         extensions: [],
+    //     };
+    // },
     async loginUser(
         loginOrEmail: string,
         password: string,
-    ): Promise<Result<{ accessToken: string } | null>> {
-        const result = await this.checkUserCredentials(loginOrEmail, password);
-        if (result.status !== ResultStatus.Success)
+    ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+        const check = await this.checkUserCredentials(loginOrEmail, password);
+        if (check.status !== ResultStatus.Success) {
             return {
                 status: ResultStatus.Unauthorized,
-                errorMessage: 'Unauthorized',
-                extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
                 data: null,
+                extensions: [{ field: 'credentials', message: 'Wrong login or password' }],
             };
+        }
 
-        const accessToken = await jwtService.createToken(result.data!._id.toString());
+        const userId = check.data!._id.toString();
+
+        const accessToken = await jwtService.createToken(userId);
+        const refreshToken = randomUUID(); // или randomBytes(32).toString('hex')
+
+        // Сохраняем refresh в БД
+        await refreshTokenRepository.create({
+            userId,
+            token: refreshToken,
+            expiresAt: addSeconds(new Date(), 20),
+        });
 
         return {
             status: ResultStatus.Success,
-            data: {accessToken},
-            extensions: [],
+            data: { accessToken, refreshToken },
         };
     },
 
+    async refresh(refreshToken: string): Promise<Result<{ accessToken: string; newRefreshToken: string } | null>> {
+        const tokenRecord = await refreshTokenRepository.findValidByToken(refreshToken);
+
+        if (!tokenRecord) {
+            return { status: ResultStatus.Unauthorized, data: null };
+        }
+
+        // Инвалидируем старый (удаляем)
+        await refreshTokenRepository.deleteById(tokenRecord._id.toString());
+
+        const userId = tokenRecord.userId;
+
+        const newAccess = await jwtService.createToken(userId);
+        const newRefresh = randomUUID();
+
+        await refreshTokenRepository.create({
+            userId,
+            token: newRefresh,
+            expiresAt: addSeconds(new Date(), 20),
+        });
+
+        return {
+            status: ResultStatus.Success,
+            data: { accessToken: newAccess, newRefreshToken: newRefresh },
+        };
+    },
+
+    async logout(refreshToken: string): Promise<void> {
+        await refreshTokenRepository.deleteByToken(refreshToken);
+    },
+
+    async getMe(userId: string): Promise<Result<{ userId: string; login: string; email: string } | null>> {
+        const user = await usersRepository.findById(userId);
+        if (!user) return { status: ResultStatus.NotFound, data: null };
+
+        return {
+            status: ResultStatus.Success,
+            data: {
+                userId: user._id.toString(),
+                login: user.login,
+                email: user.email,
+            },
+        };
+    },
+};
 
     async checkUserCredentials(
         loginOrEmail: string,

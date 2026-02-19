@@ -1,4 +1,5 @@
 import express, {Express, Request, Response} from "express";
+import cookieParser from 'cookie-parser';
 import {BlogRouter} from "./Blogs/routes/blog.router";
 import {AUTH_PATH, BLOGS_PATH, COMM_PATH, POSTS_PATH, TESTS_PATH, USERS_PATH} from "./core/paths/paths";
 import {PostRouter} from "./Posts/routes/post.router.rs";
@@ -9,7 +10,7 @@ import {commentRouter} from "./Comments/routes/comment.router";
 
 export const setupApp = (app: Express) => {
     app.use(express.json()); // middleware для парсинга JSON в теле запроса
-
+    app.use(cookieParser());
     // основной роут
     app.get("/", (req: Request, res: Response) => {
         res.status(200).send("Test!");
