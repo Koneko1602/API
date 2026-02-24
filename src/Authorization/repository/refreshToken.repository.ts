@@ -1,29 +1,44 @@
-// repository/refreshToken.repository.ts
 
-import { model, Schema } from 'mongoose';
 
-const refreshSchema = new Schema({
-    userId: { type: String, required: true },
-    token: { type: String, required: true, unique: true },
-    expiresAt: { type: Date, required: true, expires: 0 }, // TTL
-});
+import { ObjectId, WithId } from 'mongodb';
+import { randomUUID } from 'crypto';
+import {RefreshTokensCollection} from "../../db/Mongo.db";
 
-export const RefreshTokenModel = model('RefreshToken', refreshSchema);
+export interface RefreshTokenDB {
+    _id?: ObjectId;
+    userId: string;
+    token: string;         // random string
+    expiresAt: Date;
+    createdAt: Date;
+}
 
 export const refreshTokenRepository = {
-    async create(data: { userId: string; token: string; expiresAt: Date }) {
-        await RefreshTokenModel.create(data);
+    async create(userId: string): Promise<string> {
+        const token = randomUUID();
+        const expiresAt = new Date(Date.now() + 20 * 1000); // 20 сек по Swagger
+
+        await RefreshTokensCollection.insertOne({
+            userId,
+            token,
+            expiresAt,
+            createdAt: new Date(),
+        });
+
+        return token;
     },
 
-    async findValidByToken(token: string) {
-        return RefreshTokenModel.findOne({ token, expiresAt: { $gt: new Date() } });
+    async findValid(token: string): Promise<WithId<RefreshTokenDB> | null> {
+        return RefreshTokensCollection.findOne({
+            token,
+            expiresAt: { $gt: new Date() },
+        });
     },
 
-    async deleteByToken(token: string) {
-        await RefreshTokenModel.deleteOne({ token });
+    async deleteByToken(token: string): Promise<void> {
+        await RefreshTokensCollection.deleteOne({ token });
     },
 
-    async deleteById(id: string) {
-        await RefreshTokenModel.findByIdAndDelete(id);
+    async deleteByUserId(userId: string): Promise<void> {
+        await RefreshTokensCollection.deleteMany({ userId }); // на всякий случай (multi-device)
     },
 };
