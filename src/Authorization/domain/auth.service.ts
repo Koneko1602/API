@@ -83,8 +83,26 @@ export const authService = {
             extensions: [],
         };
     },
-    async logout(refreshToken: string): Promise<void> {
+    async logout(refreshToken: string): Promise<Result<null>> {
+        // Проверяем, что токен валидный (JWT + есть в БД + не просрочен)
+        const record = await refreshTokenRepository.findValid(refreshToken);
+
+        if (!record) {
+            return {
+                status: ResultStatus.Unauthorized,
+                data: null,
+                extensions: [],
+            };
+        }
+
+        // Удаляем токен из БД
         await refreshTokenRepository.deleteByToken(refreshToken);
+
+        return {
+            status: ResultStatus.Success,
+            data: null,
+            extensions: [],
+        };
     },
 
     async getCurrentUser(userId: string): Promise<Result<{ userId: string; login: string; email: string } | null>> {

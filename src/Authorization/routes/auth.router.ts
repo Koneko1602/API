@@ -379,14 +379,24 @@ authRouter.post(
 authRouter.post(
     '/logout',
     async (req: Request, res: Response) => {
-        const refresh = req.cookies[REFRESH_COOKIE_NAME];
+        const refresh = req.cookies?.[REFRESH_COOKIE_NAME];
 
-        if (refresh) {
-            await authService.logout(refresh);
+        // 1. Нет токена в куке → сразу 401
+        if (!refresh) {
+            return res.sendStatus(HttpStatus.Unauthorized);
         }
 
+        const result = await authService.logout(refresh);
+
+        // 2. Токен просрочен / invalid / уже удалён → 401
+        if (result.status !== ResultStatus.Success) {
+            res.clearCookie(REFRESH_COOKIE_NAME);
+            return res.sendStatus(HttpStatus.Unauthorized);
+        }
+
+        // 3. Всё ок → чистим куку и 204
         res.clearCookie(REFRESH_COOKIE_NAME);
-        res.sendStatus(204);
+        res.sendStatus(HttpStatus.NoContent);
     }
 );
 
