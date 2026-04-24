@@ -14,6 +14,7 @@ const bootstrap = async () => {
     app.listen(PORT, () => {
         console.log(`Example app listening on port ${PORT}`);
     });
+    app.set('trust proxy', true);   // для корректного req.ip
     return app;
 };
 
