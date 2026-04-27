@@ -9,7 +9,7 @@ import {randomUUID} from "node:crypto";
 import {nodemailerService} from "../adapters/nodemailer.service";
 import {emailExamples} from "../adapters/emailExamples";
 import {add} from "date-fns/add";
-import {UsersCollection} from "../../db/Mongo.db";
+import {RefreshTokensCollection, UsersCollection} from "../../db/Mongo.db";
 import {refreshTokenRepository} from "../repository/refreshToken.repository";
 
 export const authService = {
@@ -35,47 +35,54 @@ export const authService = {
     //         extensions: [],
     //     };
     // },
-        async loginUser(
-            loginOrEmail: string,
-            password: string,
-        ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
-            const check = await this.checkUserCredentials(loginOrEmail, password);
-            if (check.status !== ResultStatus.Success) {
-                return {
-                    status: ResultStatus.Unauthorized,
-                    data: null,
-                    extensions: [{ field: 'loginOrEmail or password', message: 'Wrong credentials' }],
-                };
-            }
+    async loginUser(
+        loginOrEmail: string,
+        password: string,
+        ip: string,
+        title: string
+    ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+        const check = await this.checkUserCredentials(loginOrEmail, password);
+        if (check.status !== ResultStatus.Success) {
+            return { status: ResultStatus.Unauthorized, data: null, extensions: [] };
+        }
 
-            const userId = check.data!._id.toString();
+        const userId = check.data!._id.toString();
 
-            const accessToken = await jwtService.createToken(userId);
-            const refreshToken = await refreshTokenRepository.create(userId);
+        const accessToken = await jwtService.createToken(userId);
+        const refreshToken = await refreshTokenRepository.create(userId, ip, title);
 
-            return {
-                status: ResultStatus.Success,
-                data: { accessToken, refreshToken },
-                extensions: [],
-            };
-        },
+        return {
+            status: ResultStatus.Success,
+            data: { accessToken, refreshToken },
+            extensions: [],
+        };
+    },
         // Сохраняем refresh в БД
-    async refreshTokens(oldRefreshToken: string): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+    async refreshTokens(oldRefreshToken: string, ip: string): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
         const record = await refreshTokenRepository.findValid(oldRefreshToken);
 
         if (!record) {
-            return { status: ResultStatus.Unauthorized,
-                data: null,
-                extensions: []
-            };
+            return { status: ResultStatus.Unauthorized, data: null, extensions: [] };
         }
 
-        // Инвалидируем старый
+        // Инвалидируем старый токен
         await refreshTokenRepository.deleteByToken(oldRefreshToken);
 
-        // Создаём новую пару
+        // Обновляем lastActiveDate (или создаём новую запись — зависит от политики)
+        // По видео обычно создаётся **новый** refresh с тем же deviceId
         const newAccess = await jwtService.createToken(record.userId);
-        const newRefresh = await refreshTokenRepository.create(record.userId);
+        const newRefresh = await jwtService.createRefreshToken(record.userId, record.deviceId);
+
+        // Сохраняем новую сессию с обновлённым lastActiveDate
+        await RefreshTokensCollection.insertOne({
+            userId: record.userId,
+            deviceId: record.deviceId,
+            title: record.title,
+            ip,
+            lastActiveDate: new Date(),
+            expiresAt: new Date(Date.now() + 20 * 1000),
+            createdAt: new Date(),
+        });
 
         return {
             status: ResultStatus.Success,
@@ -84,25 +91,13 @@ export const authService = {
         };
     },
     async logout(refreshToken: string): Promise<Result<null>> {
-        // Проверяем, что токен валидный (JWT + есть в БД + не просрочен)
         const record = await refreshTokenRepository.findValid(refreshToken);
-
         if (!record) {
-            return {
-                status: ResultStatus.Unauthorized,
-                data: null,
-                extensions: [],
-            };
+            return { status: ResultStatus.Unauthorized, data: null, extensions: [] };
         }
 
-        // Удаляем токен из БД
         await refreshTokenRepository.deleteByToken(refreshToken);
-
-        return {
-            status: ResultStatus.Success,
-            data: null,
-            extensions: [],
-        };
+        return { status: ResultStatus.Success, data: null, extensions: [] };
     },
 
     async getCurrentUser(userId: string): Promise<Result<{ userId: string; login: string; email: string } | null>> {
