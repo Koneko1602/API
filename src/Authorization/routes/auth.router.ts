@@ -14,9 +14,6 @@ import {REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS} from "../../core/settings/c
 import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
 
 
-
-
-
 // '/login',
 // userValidation.passwordValidation,
 // userValidation.loginOrEmailValidation,
@@ -225,7 +222,25 @@ import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
 //     }
 // );
 export const authRouter = Router();
+authRouter.post('/login',
+    async (req: RequestWithBody<LoginDto>, res: Response) => {
+        const ip = req.ip!;
+        const title = (req.headers['user-agent'] as string) || 'Unknown device';
 
+        const result = await authService.loginUser(
+            req.body.loginOrEmail,
+            req.body.password,
+            ip,
+            title
+        );
+
+        if (result.status !== ResultStatus.Success || !result.data) {
+            return res.status(401).end();
+        }
+
+        res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
+        return res.status(200).json({accessToken: result.data.accessToken});
+    });
 // POST /auth/login
 authRouter.post(
     '/login',
@@ -235,8 +250,9 @@ authRouter.post(
 
     async (req: RequestWithBody<LoginDto>, res: Response) => {
         const {loginOrEmail, password} = req.body;
-
-        const result = await authService.loginUser(loginOrEmail, password);
+        const ip = req.ip!;
+        const title = (req.headers['user-agent'] as string) || 'Unknown device';
+        const result = await authService.loginUser(loginOrEmail, password, ip, title);
 
         if (result.status !== ResultStatus.Success || !result.data) {
             return res.status(HttpStatus.Unauthorized).end();
@@ -244,7 +260,7 @@ authRouter.post(
 
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-        return res.status(HttpStatus.Ok).json({ accessToken: result.data.accessToken });
+        return res.status(HttpStatus.Ok).json({accessToken: result.data.accessToken});
     }
 );
 
@@ -361,8 +377,8 @@ authRouter.post(
         if (!oldRefresh) {
             return res.sendStatus(401);
         }
-
-        const result = await authService.refreshTokens(oldRefresh);
+        const ip = req.ip || 'unknown';
+        const result = await authService.refreshTokens(oldRefresh,ip);
 
         if (result.status !== ResultStatus.Success || !result.data) {
             res.clearCookie(REFRESH_COOKIE_NAME);
@@ -371,7 +387,7 @@ authRouter.post(
 
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-        res.status(200).json({ accessToken: result.data.accessToken });
+        res.status(200).json({accessToken: result.data.accessToken});
     }
 );
 

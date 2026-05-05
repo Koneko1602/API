@@ -1,9 +1,8 @@
 
-
 import { ObjectId, WithId } from 'mongodb';
 import { RefreshTokensCollection } from "../../db/Mongo.db";
 import { jwtService } from '../adapters/jwt.service';
-import {randomUUID} from "node:crypto";   // ← подправь путь, если у тебя другая структура папок
+import {randomUUID} from "node:crypto";
 
 export interface RefreshTokenDB {
     _id?: ObjectId;

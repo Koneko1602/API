@@ -78,7 +78,7 @@ export const authService = {
             userId: record.userId,
             deviceId: record.deviceId,
             title: record.title,
-            ip,
+            ip: ip,
             lastActiveDate: new Date(),
             expiresAt: new Date(Date.now() + 20 * 1000),
             createdAt: new Date(),
