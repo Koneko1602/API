@@ -24,6 +24,7 @@ const bootstrap = () => __awaiter(void 0, void 0, void 0, function* () {
     app.listen(PORT, () => {
         console.log(`Example app listening on port ${PORT}`);
     });
+    app.set('trust proxy', true); // для корректного req.ip
     return app;
 });
 bootstrap();

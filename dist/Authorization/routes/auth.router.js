@@ -232,7 +232,9 @@ exports.authRouter = (0, express_1.Router)();
 // POST /auth/login
 exports.authRouter.post('/login', validation_user_1.userValidation.passwordValidation, validation_user_1.userValidation.loginOrEmailValidation, input_validation_result_middleware_1.inputValidationResultMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { loginOrEmail, password } = req.body;
-    const result = yield auth_service_1.authService.loginUser(loginOrEmail, password);
+    const ip = req.ip;
+    const title = req.headers['user-agent'] || 'Unknown device';
+    const result = yield auth_service_1.authService.loginUser(loginOrEmail, password, ip, title);
     if (result.status !== resultCode_1.ResultStatus.Success || !result.data) {
         return res.status(http_statuses_1.HttpStatus.Unauthorized).end();
     }
@@ -320,7 +322,8 @@ exports.authRouter.post('/refresh-token', (req, res) => __awaiter(void 0, void 0
     if (!oldRefresh) {
         return res.sendStatus(401);
     }
-    const result = yield auth_service_1.authService.refreshTokens(oldRefresh);
+    const ip = req.ip || 'unknown';
+    const result = yield auth_service_1.authService.refreshTokens(oldRefresh, ip);
     if (result.status !== resultCode_1.ResultStatus.Success || !result.data) {
         res.clearCookie(cookie_config_1.REFRESH_COOKIE_NAME);
         return res.sendStatus(401);

@@ -42,19 +42,15 @@ exports.authService = {
     //         extensions: [],
     //     };
     // },
-    loginUser(loginOrEmail, password) {
+    loginUser(loginOrEmail, password, ip, title) {
         return __awaiter(this, void 0, void 0, function* () {
             const check = yield this.checkUserCredentials(loginOrEmail, password);
             if (check.status !== resultCode_1.ResultStatus.Success) {
-                return {
-                    status: resultCode_1.ResultStatus.Unauthorized,
-                    data: null,
-                    extensions: [{ field: 'loginOrEmail or password', message: 'Wrong credentials' }],
-                };
+                return { status: resultCode_1.ResultStatus.Unauthorized, data: null, extensions: [] };
             }
             const userId = check.data._id.toString();
             const accessToken = yield jwt_service_1.jwtService.createToken(userId);
-            const refreshToken = yield refreshToken_repository_1.refreshTokenRepository.create(userId);
+            const refreshToken = yield refreshToken_repository_1.refreshTokenRepository.create(userId, ip, title);
             return {
                 status: resultCode_1.ResultStatus.Success,
                 data: { accessToken, refreshToken },
@@ -63,20 +59,25 @@ exports.authService = {
         });
     },
     // Сохраняем refresh в БД
-    refreshTokens(oldRefreshToken) {
+    refreshTokens(oldRefreshToken, ip) {
         return __awaiter(this, void 0, void 0, function* () {
             const record = yield refreshToken_repository_1.refreshTokenRepository.findValid(oldRefreshToken);
             if (!record) {
-                return { status: resultCode_1.ResultStatus.Unauthorized,
-                    data: null,
-                    extensions: []
-                };
+                return { status: resultCode_1.ResultStatus.Unauthorized, data: null, extensions: [] };
             }
-            // Инвалидируем старый
-            yield refreshToken_repository_1.refreshTokenRepository.deleteByToken(oldRefreshToken);
-            // Создаём новую пару
+            // ✅ Обновляем СУЩЕСТВУЮЩУЮ запись
+            yield Mongo_db_1.RefreshTokensCollection.updateOne({ _id: record._id }, // ← Обновляем по ID
+            {
+                $set: {
+                    lastActiveDate: new Date(), // ← Обновляем время последней активности
+                    ip: ip, // ← Обновляем IP (если изменился)
+                    expiresAt: new Date(Date.now() + 20 * 1000) // ← Продлеваем срок действия
+                }
+            });
+            // ✅ Создаём новый accessToken
             const newAccess = yield jwt_service_1.jwtService.createToken(record.userId);
-            const newRefresh = yield refreshToken_repository_1.refreshTokenRepository.create(record.userId);
+            // ✅ Создаём новый refreshToken с ТЕМ ЖЕ deviceId
+            const newRefresh = yield jwt_service_1.jwtService.createRefreshToken(record.userId, record.deviceId);
             return {
                 status: resultCode_1.ResultStatus.Success,
                 data: { accessToken: newAccess, refreshToken: newRefresh },
@@ -86,22 +87,12 @@ exports.authService = {
     },
     logout(refreshToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Проверяем, что токен валидный (JWT + есть в БД + не просрочен)
             const record = yield refreshToken_repository_1.refreshTokenRepository.findValid(refreshToken);
             if (!record) {
-                return {
-                    status: resultCode_1.ResultStatus.Unauthorized,
-                    data: null,
-                    extensions: [],
-                };
+                return { status: resultCode_1.ResultStatus.Unauthorized, data: null, extensions: [] };
             }
-            // Удаляем токен из БД
             yield refreshToken_repository_1.refreshTokenRepository.deleteByToken(refreshToken);
-            return {
-                status: resultCode_1.ResultStatus.Success,
-                data: null,
-                extensions: [],
-            };
+            return { status: resultCode_1.ResultStatus.Success, data: null, extensions: [] };
         });
     },
     getCurrentUser(userId) {

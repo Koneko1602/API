@@ -13,6 +13,7 @@ const Test_router_1 = require("./tests/routers/Test.router");
 const users_router_1 = require("./Users/routes/users.router");
 const auth_router_1 = require("./Authorization/routes/auth.router");
 const comment_router_1 = require("./Comments/routes/comment.router");
+const security_router_1 = require("./Authorization/routes/security.router");
 const setupApp = (app) => {
     app.use(express_1.default.json()); // middleware для парсинга JSON в теле запроса
     app.use((0, cookie_parser_1.default)());
@@ -26,6 +27,7 @@ const setupApp = (app) => {
     app.use(paths_1.USERS_PATH, users_router_1.usersRouter);
     app.use(paths_1.AUTH_PATH, auth_router_1.authRouter);
     app.use(paths_1.COMM_PATH, comment_router_1.commentRouter);
+    app.use(paths_1.Security_PATH, security_router_1.securityRouter);
     return app;
 };
 exports.setupApp = setupApp;

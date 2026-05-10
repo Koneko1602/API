@@ -42,8 +42,8 @@ export const refreshTokenRepository = {
         if (!verified || !verified.deviceId) return null;
 
         return RefreshTokensCollection.findOne({
-            token,                    // если храните сам JWT (рекомендуется)
-            // или по deviceId + userId, но проще хранить token
+            deviceId: verified.deviceId,
+            userId: verified.userId,
             expiresAt: { $gt: new Date() },
         });
     },

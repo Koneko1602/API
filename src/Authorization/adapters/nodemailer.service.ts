@@ -8,8 +8,7 @@ export const nodemailerService = {
         template: (code: string) => string
     ): Promise<boolean> {
         let transporter = nodemailer.createTransport({
-            host: 'smtp.mail.ru',
-            port: 465,
+          service: 'gmail',
             secure: true,  // SSL
             auth: {
                 user: appConfig.EMAIL,

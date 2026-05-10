@@ -12,23 +12,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.jwtAuthMiddleware = void 0;
 const jwt_service_1 = require("../../adapters/jwt.service");
 const jwtAuthMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const authHeader = req.headers.authorization; // 'Bearer xxxx'
-    // 1. Проверка наличия заголовка и формата
+    const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.sendStatus(401);
     }
     const token = authHeader.split(' ')[1];
-    // 2. ⚡️ Вызов СЕРВИСА (verifyToken)
-    const userPayload = yield jwt_service_1.jwtService.verifyToken(token); // Используем jwt.service.ts
-    if (userPayload) {
-        // 3. Если токен валиден, добавляем данные пользователя и продолжаем
-        req.userId = userPayload.userId;
-        return next();
-    }
-    else {
-        // 4. Если токен невалиден (истек, неверный ключ)
+    const payload = yield jwt_service_1.jwtService.verifyToken(token);
+    if (!payload) {
         return res.sendStatus(401);
     }
+    req.userId = payload.userId;
+    req.deviceId = payload.deviceId; // ← добавлено
+    next();
 });
 exports.jwtAuthMiddleware = jwtAuthMiddleware;
 //# sourceMappingURL=jwt.auth.middleware.js.map

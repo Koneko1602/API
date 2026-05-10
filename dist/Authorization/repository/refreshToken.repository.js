@@ -11,34 +11,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.refreshTokenRepository = void 0;
 const Mongo_db_1 = require("../../db/Mongo.db");
-const jwt_service_1 = require("../adapters/jwt.service"); // ← подправь путь, если у тебя другая структура папок
+const jwt_service_1 = require("../adapters/jwt.service");
+const node_crypto_1 = require("node:crypto");
 exports.refreshTokenRepository = {
-    create(userId) {
+    // Создание новой сессии (при логине)
+    create(userId, ip, title) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Генерируем JWT вместо randomUUID
-            const refreshToken = yield jwt_service_1.jwtService.createRefreshToken(userId);
-            const expiresAt = new Date(Date.now() + 20 * 1000); // 20 сек по Swagger
+            const deviceId = (0, node_crypto_1.randomUUID)();
+            const refreshToken = yield jwt_service_1.jwtService.createRefreshToken(userId, deviceId);
+            const expiresAt = new Date(Date.now() + 20 * 1000); // 20 сек по тестам
             yield Mongo_db_1.RefreshTokensCollection.insertOne({
                 userId,
-                token: refreshToken, // сохраняем полный JWT
+                deviceId,
+                title,
+                ip,
+                lastActiveDate: new Date(),
                 expiresAt,
                 createdAt: new Date(),
             });
-            return refreshToken; // ← возвращаем JWT в куку
+            return refreshToken;
         });
     },
     findValid(token) {
         return __awaiter(this, void 0, void 0, function* () {
-            // 1. Проверяем подпись и срок жизни JWT
             const verified = yield jwt_service_1.jwtService.verifyToken(token);
-            if (!verified) {
+            if (!verified || !verified.deviceId)
                 return null;
-            }
-            // 2. Проверяем, что токен не отозван в БД
             return Mongo_db_1.RefreshTokensCollection.findOne({
-                token,
+                deviceId: verified.deviceId,
+                userId: verified.userId,
                 expiresAt: { $gt: new Date() },
             });
+        });
+    },
+    updateLastActive(token) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Mongo_db_1.RefreshTokensCollection.updateOne({ token }, { $set: { lastActiveDate: new Date() } });
         });
     },
     deleteByToken(token) {
@@ -49,6 +57,27 @@ exports.refreshTokenRepository = {
     deleteByUserId(userId) {
         return __awaiter(this, void 0, void 0, function* () {
             yield Mongo_db_1.RefreshTokensCollection.deleteMany({ userId });
+        });
+    },
+    // Удалить все сессии пользователя кроме текущей (deviceId)
+    deleteAllOther(userId, currentDeviceId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Mongo_db_1.RefreshTokensCollection.deleteMany({
+                userId,
+                deviceId: { $ne: currentDeviceId }
+            });
+        });
+    },
+    // Удалить конкретную сессию
+    deleteByDeviceId(userId, deviceId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Mongo_db_1.RefreshTokensCollection.deleteOne({ userId, deviceId });
+        });
+    },
+    // Получить все активные сессии пользователя
+    findAllByUserId(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Mongo_db_1.RefreshTokensCollection.find({ userId }).toArray();
         });
     },
 };

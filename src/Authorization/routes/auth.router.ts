@@ -222,25 +222,7 @@ import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
 //     }
 // );
 export const authRouter = Router();
-authRouter.post('/login',
-    async (req: RequestWithBody<LoginDto>, res: Response) => {
-        const ip = req.ip!;
-        const title = (req.headers['user-agent'] as string) || 'Unknown device';
 
-        const result = await authService.loginUser(
-            req.body.loginOrEmail,
-            req.body.password,
-            ip,
-            title
-        );
-
-        if (result.status !== ResultStatus.Success || !result.data) {
-            return res.status(401).end();
-        }
-
-        res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
-        return res.status(200).json({accessToken: result.data.accessToken});
-    });
 // POST /auth/login
 authRouter.post(
     '/login',
@@ -378,7 +360,7 @@ authRouter.post(
             return res.sendStatus(401);
         }
         const ip = req.ip || 'unknown';
-        const result = await authService.refreshTokens(oldRefresh,ip);
+        const result = await authService.refreshTokens(oldRefresh, ip);
 
         if (result.status !== ResultStatus.Success || !result.data) {
             res.clearCookie(REFRESH_COOKIE_NAME);

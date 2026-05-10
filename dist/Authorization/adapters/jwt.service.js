@@ -23,11 +23,11 @@ exports.jwtService = {
             });
         });
     },
-    createRefreshToken(userId) {
+    createRefreshToken(userId, deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return jsonwebtoken_1.default.sign({ userId }, config_1.appConfig.AC_SECRET, {
-                expiresIn: '20s',
-            });
+            return jsonwebtoken_1.default.sign({ userId, deviceId }, config_1.appConfig.AC_SECRET, // можно вынести отдельный REFRESH_SECRET позже
+            { expiresIn: '20s' } // по требованиям тестов
+            );
         });
     },
     decodeToken(token) {
@@ -41,13 +41,21 @@ exports.jwtService = {
             }
         });
     },
+    // async verifyToken(token: string): Promise<{ userId: string } | null> {
+    //     try {
+    //         return jwt.verify(token, appConfig.AC_SECRET) as { userId: string };
+    //     } catch (error) {
+    //         console.error("Token verify some error");
+    //         return null;
+    //     }
+    // },
     verifyToken(token) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 return jsonwebtoken_1.default.verify(token, config_1.appConfig.AC_SECRET);
             }
             catch (error) {
-                console.error("Token verify some error");
+                console.error("Token verify error");
                 return null;
             }
         });

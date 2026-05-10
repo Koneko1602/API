@@ -3,14 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailExamples = void 0;
 exports.emailExamples = {
     registrationEmail(code) {
-        const ngrokUrl = 'https://919e-146-70-232-148.ngrok-free.app';
+        const ngrokUrl = '   https://fed2-195-238-124-56.ngrok-free.app ';
         return ` <h1>Thank for your registration</h1>
                <p>To finish registration please follow the link below:<br>
                   <a href='${ngrokUrl}/auth/registration-confirmation?code=${code}'>complete registration</a>
               </p>`;
     },
     passwordRecoveryEmail(code) {
-        const ngrokUrl = 'https://919e-146-70-232-148.ngrok-free.app';
+        const ngrokUrl = '  https://fed2-195-238-124-56.ngrok-free.app';
         return `<h1>Password recovery</h1>
         <p>To finish password recovery please follow the link below:
             <a href='${ngrokUrl}/auth/password-recovery?recoveryCode=${code}'>recovery password</a>
