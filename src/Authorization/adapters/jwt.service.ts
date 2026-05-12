@@ -4,8 +4,8 @@ import {appConfig} from "../../core/settings/config";
 
 
 export const jwtService = {
-    async createToken(userId: string): Promise<string> {
-        return jwt.sign({ userId }, appConfig.AC_SECRET, {
+    async createToken(userId: string,deviceId?: string): Promise<string> {
+        return jwt.sign({ userId,deviceId }, appConfig.AC_SECRET, {
             expiresIn: '10s', // по Swagger тестовый режим
         });
     },
@@ -35,11 +35,20 @@ export const jwtService = {
     // },
     async verifyToken(token: string): Promise<{ userId: string; deviceId?: string } | null> {
         try {
-            return jwt.verify(token, appConfig.AC_SECRET) as { userId: string; deviceId?: string };
+            const payload = jwt.verify(token, appConfig.AC_SECRET) as any;
+
+            if (!payload || !payload.userId) {
+                console.error("JWT payload missing userId");
+                return null;
+            }
+
+            return {
+                userId: payload.userId,
+                deviceId: payload.deviceId
+            };
         } catch (error) {
-            console.error("Token verify error");
+            console.error("Token verify error:", error);
             return null;
         }
     },
 };
-//. Это типичный сервис для реализации аутентификации и авторизации в приложении.

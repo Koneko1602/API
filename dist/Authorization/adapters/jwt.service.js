@@ -16,9 +16,9 @@ exports.jwtService = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../../core/settings/config");
 exports.jwtService = {
-    createToken(userId) {
+    createToken(userId, deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return jsonwebtoken_1.default.sign({ userId }, config_1.appConfig.AC_SECRET, {
+            return jsonwebtoken_1.default.sign({ userId, deviceId }, config_1.appConfig.AC_SECRET, {
                 expiresIn: '10s', // по Swagger тестовый режим
             });
         });
@@ -52,14 +52,21 @@ exports.jwtService = {
     verifyToken(token) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                return jsonwebtoken_1.default.verify(token, config_1.appConfig.AC_SECRET);
+                const payload = jsonwebtoken_1.default.verify(token, config_1.appConfig.AC_SECRET);
+                if (!payload || !payload.userId) {
+                    console.error("JWT payload missing userId");
+                    return null;
+                }
+                return {
+                    userId: payload.userId,
+                    deviceId: payload.deviceId
+                };
             }
             catch (error) {
-                console.error("Token verify error");
+                console.error("Token verify error:", error);
                 return null;
             }
         });
     },
 };
-//. Это типичный сервис для реализации аутентификации и авторизации в приложении.
 //# sourceMappingURL=jwt.service.js.map

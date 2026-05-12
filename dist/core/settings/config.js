@@ -10,7 +10,7 @@ exports.appConfig = {
     AC_TIME: (process.env.AC_TIME || '1h'),
     RT_SECRET: (process.env.RT_SECRET || 'gkflgkfkgjdlfgjvf'),
     DB_TYPE: process.env.DB_TYPE,
-    EMAIL: 'koneko2019@mail.ru',
-    EMAIL_PASS: 'pNSFNO7hBINyta9GhKmb',
+    EMAIL: 'konekohell@gmail.com',
+    EMAIL_PASS: 'rupsgzuinauyqfsy',
 };
 //# sourceMappingURL=config.js.map

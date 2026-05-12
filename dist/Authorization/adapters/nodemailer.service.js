@@ -19,8 +19,7 @@ exports.nodemailerService = {
     sendEmail(email, code, template) {
         return __awaiter(this, void 0, void 0, function* () {
             let transporter = nodemailer_1.default.createTransport({
-                host: 'smtp.mail.ru',
-                port: 465,
+                service: 'gmail',
                 secure: true, // SSL
                 auth: {
                     user: config_1.appConfig.EMAIL,
@@ -33,8 +32,17 @@ exports.nodemailerService = {
                 subject: 'Your code is here',
                 html: template(code), // html body
             });
-            return !!info;
+            console.log('✅ Email sent successfully!');
+            console.log('Message ID:', info.messageId);
+            return true;
         });
     },
+    catch(error) {
+        console.error('❌ Nodemailer ERROR:');
+        console.error('Code:', error.code);
+        console.error('Message:', error.message);
+        console.error('Response:', error.response);
+        return false;
+    }
 };
 //# sourceMappingURL=nodemailer.service.js.map

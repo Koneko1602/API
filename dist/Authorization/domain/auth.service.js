@@ -21,36 +21,18 @@ const add_1 = require("date-fns/add");
 const Mongo_db_1 = require("../../db/Mongo.db");
 const refreshToken_repository_1 = require("../repository/refreshToken.repository");
 exports.authService = {
-    // async loginUser(
-    //     loginOrEmail: string,
-    //     password: string,
-    // ): Promise<Result<{ accessToken: string } | null>> {
-    //     const result = await this.checkUserCredentials(loginOrEmail, password);
-    //     if (result.status !== ResultStatus.Success)
-    //         return {
-    //             status: ResultStatus.Unauthorized,
-    //             errorMessage: 'Unauthorized',
-    //             extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
-    //             data: null,
-    //         };
-    //
-    //     const accessToken = await jwtService.createToken(result.data!._id.toString());
-    //
-    //     return {
-    //         status: ResultStatus.Success,
-    //         data: {accessToken},
-    //         extensions: [],
-    //     };
-    // },
     loginUser(loginOrEmail, password, ip, title) {
         return __awaiter(this, void 0, void 0, function* () {
             const check = yield this.checkUserCredentials(loginOrEmail, password);
             if (check.status !== resultCode_1.ResultStatus.Success) {
+                console.log(`❌ Credentials check failed for ${loginOrEmail}`);
                 return { status: resultCode_1.ResultStatus.Unauthorized, data: null, extensions: [] };
             }
             const userId = check.data._id.toString();
-            const accessToken = yield jwt_service_1.jwtService.createToken(userId);
+            const deviceId = (0, node_crypto_1.randomUUID)();
+            const accessToken = yield jwt_service_1.jwtService.createToken(userId, deviceId);
             const refreshToken = yield refreshToken_repository_1.refreshTokenRepository.create(userId, ip, title);
+            console.log(`✅ authService.loginUser SUCCESS | userId=${userId} | deviceId=${deviceId} | accessToken=${accessToken.substring(0, 30)}...`);
             return {
                 status: resultCode_1.ResultStatus.Success,
                 data: { accessToken, refreshToken },
@@ -65,18 +47,14 @@ exports.authService = {
             if (!record) {
                 return { status: resultCode_1.ResultStatus.Unauthorized, data: null, extensions: [] };
             }
-            // ✅ Обновляем СУЩЕСТВУЮЩУЮ запись
-            yield Mongo_db_1.RefreshTokensCollection.updateOne({ _id: record._id }, // ← Обновляем по ID
-            {
+            yield Mongo_db_1.RefreshTokensCollection.updateOne({ _id: record._id }, {
                 $set: {
-                    lastActiveDate: new Date(), // ← Обновляем время последней активности
-                    ip: ip, // ← Обновляем IP (если изменился)
-                    expiresAt: new Date(Date.now() + 20 * 1000) // ← Продлеваем срок действия
+                    lastActiveDate: new Date(),
+                    ip: ip,
+                    expiresAt: new Date(Date.now() + 20 * 1000)
                 }
             });
-            // ✅ Создаём новый accessToken
-            const newAccess = yield jwt_service_1.jwtService.createToken(record.userId);
-            // ✅ Создаём новый refreshToken с ТЕМ ЖЕ deviceId
+            const newAccess = yield jwt_service_1.jwtService.createToken(record.userId, record.deviceId);
             const newRefresh = yield jwt_service_1.jwtService.createRefreshToken(record.userId, record.deviceId);
             return {
                 status: resultCode_1.ResultStatus.Success,

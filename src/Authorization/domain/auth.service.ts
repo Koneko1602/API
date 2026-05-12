@@ -14,42 +14,27 @@ import {refreshTokenRepository} from "../repository/refreshToken.repository";
 
 export const authService = {
 
-    // async loginUser(
-    //     loginOrEmail: string,
-    //     password: string,
-    // ): Promise<Result<{ accessToken: string } | null>> {
-    //     const result = await this.checkUserCredentials(loginOrEmail, password);
-    //     if (result.status !== ResultStatus.Success)
-    //         return {
-    //             status: ResultStatus.Unauthorized,
-    //             errorMessage: 'Unauthorized',
-    //             extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
-    //             data: null,
-    //         };
-    //
-    //     const accessToken = await jwtService.createToken(result.data!._id.toString());
-    //
-    //     return {
-    //         status: ResultStatus.Success,
-    //         data: {accessToken},
-    //         extensions: [],
-    //     };
-    // },
+
     async loginUser(
         loginOrEmail: string,
         password: string,
         ip: string,
         title: string
     ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+
         const check = await this.checkUserCredentials(loginOrEmail, password);
         if (check.status !== ResultStatus.Success) {
+            console.log(`❌ Credentials check failed for ${loginOrEmail}`);
             return {status: ResultStatus.Unauthorized, data: null, extensions: []};
         }
 
         const userId = check.data!._id.toString();
+        const deviceId = randomUUID();
 
-        const accessToken = await jwtService.createToken(userId);
+        const accessToken = await jwtService.createToken(userId, deviceId);
         const refreshToken = await refreshTokenRepository.create(userId, ip, title);
+
+        console.log(`✅ authService.loginUser SUCCESS | userId=${userId} | deviceId=${deviceId} | accessToken=${accessToken.substring(0, 30)}...`);
 
         return {
             status: ResultStatus.Success,
@@ -65,22 +50,18 @@ export const authService = {
             return { status: ResultStatus.Unauthorized, data: null, extensions: [] };
         }
 
-        // ✅ Обновляем СУЩЕСТВУЮЩУЮ запись
         await RefreshTokensCollection.updateOne(
-            { _id: record._id },  // ← Обновляем по ID
+            { _id: record._id },
             {
                 $set: {
-                    lastActiveDate: new Date(),  // ← Обновляем время последней активности
-                    ip: ip,                       // ← Обновляем IP (если изменился)
-                    expiresAt: new Date(Date.now() + 20 * 1000)  // ← Продлеваем срок действия
+                    lastActiveDate: new Date(),
+                    ip: ip,
+                    expiresAt: new Date(Date.now() + 20 * 1000)
                 }
             }
         );
 
-        // ✅ Создаём новый accessToken
-        const newAccess = await jwtService.createToken(record.userId);
-
-        // ✅ Создаём новый refreshToken с ТЕМ ЖЕ deviceId
+        const newAccess = await jwtService.createToken(record.userId, record.deviceId);
         const newRefresh = await jwtService.createRefreshToken(record.userId, record.deviceId);
 
         return {

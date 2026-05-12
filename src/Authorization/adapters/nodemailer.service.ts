@@ -21,8 +21,16 @@ export const nodemailerService = {
             subject: 'Your code is here',
             html: template(code), // html body
         });
-
-        return !!info;
-    },
+        console.log('✅ Email sent successfully!');
+        console.log('Message ID:', info.messageId);
+        return true;
+    } ,
+    catch  (error: any) {
+        console.error('❌ Nodemailer ERROR:');
+        console.error('Code:', error.code);
+        console.error('Message:', error.message);
+        console.error('Response:', error.response);
+        return false;
+    }
 };
 
