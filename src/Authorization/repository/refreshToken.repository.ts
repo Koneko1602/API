@@ -1,4 +1,3 @@
-
 import { ObjectId, WithId } from 'mongodb';
 import { RefreshTokensCollection } from "../../db/Mongo.db";
 import { jwtService } from '../adapters/jwt.service';
@@ -47,10 +46,10 @@ export const refreshTokenRepository = {
         });
     },
 
-    // Исправленный метод
     async deleteByToken(token: string): Promise<void> {
         const verified = await jwtService.verifyToken(token);
-        if (!verified?.deviceId) return;
+        // ✅ ИСПРАВЛЕНИЕ: Проверяем оба параметра!
+        if (!verified?.deviceId || !verified?.userId) return;
 
         await RefreshTokensCollection.deleteOne({
             deviceId: verified.deviceId,
@@ -77,10 +76,18 @@ export const refreshTokenRepository = {
         return RefreshTokensCollection.find({ userId }).toArray();
     },
 
-    // Этот метод пока не используется, но на будущее
+    // ✅ НОВЫЙ МЕТОД для безопасной проверки существования
+    async findByDeviceIdAndUserId(
+        userId: string,
+        deviceId: string
+    ): Promise<WithId<RefreshTokenDB> | null> {
+        return RefreshTokensCollection.findOne({ userId, deviceId });
+    },
+
     async updateLastActive(token: string): Promise<void> {
         const verified = await jwtService.verifyToken(token);
-        if (!verified?.deviceId) return;
+        // ✅ ИСПРАВЛЕНИЕ: Проверяем оба параметра!
+        if (!verified?.deviceId || !verified?.userId) return;
 
         await RefreshTokensCollection.updateOne(
             { deviceId: verified.deviceId, userId: verified.userId },
