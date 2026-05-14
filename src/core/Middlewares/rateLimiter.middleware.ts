@@ -20,7 +20,7 @@ export const rateLimiterMiddleware = (req: Request, res: Response, next: NextFun
 
     const record = store[ip];
 
-    // Здесь используем >= чтобы не зависеть от точного миллисекундного соответствия
+
     if (now >= record.resetTime) {
         record.count = 1;
         record.resetTime = now + TIME_WINDOW;
