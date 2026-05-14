@@ -3,7 +3,16 @@ import { NextFunction, Request, Response } from 'express';
 import {jwtService} from "../../adapters/jwt.service";
 
 
-export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export interface AuthenticatedRequest extends Request {
+    userId: string;
+    deviceId: string;
+}
+
+export const jwtAuthMiddleware = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {  // ← Убираем явный тип возврата!
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.log('❌ JWT Middleware: No Bearer token');
@@ -18,14 +27,17 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
 
     const payload = await jwtService.verifyToken(token);
 
-    if (!payload || !payload.userId) {
-        console.log('❌ JWT Middleware: Invalid payload. Payload:', payload);
+    if (!payload) {
+        console.log('❌ JWT Middleware: Invalid token');
         return res.sendStatus(401);
     }
 
-    (req as any).userId = payload.userId;
-    (req as any).deviceId = payload.deviceId;
+    (req as AuthenticatedRequest).userId = payload.userId;
+    (req as AuthenticatedRequest).deviceId = payload.deviceId;
 
-    console.log(`✅ JWT Middleware SUCCESS | userId: ${payload.userId} | deviceId: ${payload.deviceId}`);
+    if (process.env.DEBUG) {
+        console.log(`✅ JWT Middleware SUCCESS`);
+    }
+
     next();
 };

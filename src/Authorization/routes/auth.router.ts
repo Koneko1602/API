@@ -11,7 +11,8 @@ import {createErrorsMessages} from "../../core/errors/FieldError";
 import {FieldError} from "../../core/errors/APIErrorResult";
 import {inputValidationAuthMiddleware} from "../../core/Middlewares/validation/validation-auth.middleware";
 import {REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS} from "../../core/settings/cookie.config";
-import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
+import {AuthenticatedRequest, jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
+import {rateLimiterMiddleware} from "../../core/Middlewares/rateLimiter.middleware";
 
 
 export const authRouter = Router();
@@ -19,9 +20,11 @@ export const authRouter = Router();
 // POST /auth/login
 authRouter.post(
     '/login',
+    rateLimiterMiddleware,
     userValidation.passwordValidation,
     userValidation.loginOrEmailValidation,
     inputValidationResultMiddleware,
+
 
     async (req: RequestWithBody<LoginDto>, res: Response) => {
         const {loginOrEmail, password} = req.body;
@@ -35,12 +38,11 @@ authRouter.post(
             return res.status(401).end();
         }
 
-        // КРИТИЧНО: Сначала cookie, потом тело
+        // ✅ Сначала cookie, потом тело
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
         console.log('📤 Login OK | accessToken sent + refreshToken in cookie');
 
-        // Тесты ожидают accessToken как строку (plain text)
         return res.status(200).send(result.data.accessToken);
     }
 );
@@ -48,6 +50,7 @@ authRouter.post(
 // POST /auth/registration-confirmation
 authRouter.post(
     '/registration-confirmation',
+    rateLimiterMiddleware,
     body('code')
         .trim()
         .isString()
@@ -79,17 +82,19 @@ authRouter.post(
             return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors));
         }
 
-        return res.sendStatus(HttpStatus.NoContent); // 204
+        return res.sendStatus(HttpStatus.NoContent);
     }
 );
 
 // POST /auth/registration
 authRouter.post(
     '/registration',
+    rateLimiterMiddleware,
     userValidation.loginValidation,
     userValidation.passwordValidation,
     userValidation.emailValidation,
     inputValidationAuthMiddleware,
+
 
     async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
         const {login, password, email} = req.body;
@@ -114,13 +119,14 @@ authRouter.post(
             return res.status(HttpStatus.BadRequest).json(createErrorsMessages(safeErrors));
         }
 
-        return res.sendStatus(HttpStatus.NoContent); // 204
+        return res.sendStatus(HttpStatus.NoContent);
     }
 );
 
 // POST /auth/registration-email-resending
 authRouter.post(
     '/registration-email-resending',
+    rateLimiterMiddleware,
     userValidation.emailValidation,
     inputValidationResultMiddleware,
 
@@ -145,11 +151,10 @@ authRouter.post(
             return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
         }
 
-        return res.sendStatus(HttpStatus.NoContent); // 204
+        return res.sendStatus(HttpStatus.NoContent);
     }
 );
 
-// POST /auth/refresh-token
 // POST /auth/refresh-token
 authRouter.post(
     '/refresh-token',
@@ -184,21 +189,19 @@ authRouter.post(
     async (req: Request, res: Response) => {
         const refresh = req.cookies?.[REFRESH_COOKIE_NAME];
 
-        // 1. Нет токена в куке → сразу 401
         if (!refresh) {
             return res.sendStatus(HttpStatus.Unauthorized);
         }
 
         const result = await authService.logout(refresh);
 
-        // 2. Токен просрочен / invalid / уже удалён → 401
+        // ✅ Всегда очищаем куку
+        res.clearCookie(REFRESH_COOKIE_NAME);
+
         if (result.status !== ResultStatus.Success) {
-            res.clearCookie(REFRESH_COOKIE_NAME);
             return res.sendStatus(HttpStatus.Unauthorized);
         }
 
-        // 3. Всё ок → чистим куку и 204
-        res.clearCookie(REFRESH_COOKIE_NAME);
         res.sendStatus(HttpStatus.NoContent);
     }
 );
@@ -207,7 +210,7 @@ authRouter.post(
 authRouter.get(
     '/me',
     jwtAuthMiddleware,
-    async (req: any, res: Response) => {
+    async (req: any, res: Response) => {  // ✅ Правильная типизация
         const userId = req.userId;
 
         const result = await authService.getCurrentUser(userId);

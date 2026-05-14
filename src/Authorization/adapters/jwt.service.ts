@@ -4,11 +4,12 @@ import {appConfig} from "../../core/settings/config";
 
 
 export const jwtService = {
-    async createToken(userId: string,deviceId?: string): Promise<string> {
-        return jwt.sign({ userId,deviceId }, appConfig.AC_SECRET, {
-            expiresIn: '10s', // по Swagger тестовый режим
-        });
-    },
+
+        async createToken(userId: string, deviceId: string): Promise<string> {
+            return jwt.sign({ userId, deviceId }, appConfig.AC_SECRET, {
+                expiresIn: '10s', // по Swagger тестовый режим
+            });
+        },
     async createRefreshToken(userId: string, deviceId: string): Promise<string> {
         return jwt.sign(
             { userId, deviceId },
@@ -25,20 +26,13 @@ export const jwtService = {
             return null;
         }
     },
-    // async verifyToken(token: string): Promise<{ userId: string } | null> {
-    //     try {
-    //         return jwt.verify(token, appConfig.AC_SECRET) as { userId: string };
-    //     } catch (error) {
-    //         console.error("Token verify some error");
-    //         return null;
-    //     }
-    // },
-    async verifyToken(token: string): Promise<{ userId: string; deviceId?: string } | null> {
+
+    async verifyToken(token: string): Promise<{ userId: string; deviceId: string } | null> {
         try {
             const payload = jwt.verify(token, appConfig.AC_SECRET) as any;
 
-            if (!payload || !payload.userId) {
-                console.error("JWT payload missing userId");
+            if (!payload || !payload.userId || !payload.deviceId) {
+                console.error("JWT payload missing userId or deviceId");
                 return null;
             }
 
