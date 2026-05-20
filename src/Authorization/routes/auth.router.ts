@@ -16,7 +16,10 @@ import {rateLimiterMiddleware} from "../../core/Middlewares/rateLimiter.middlewa
 
 
 export const authRouter = Router();
-
+authRouter.use((req, res, next) => {
+    console.log('🌐 Router hit:', req.method, req.originalUrl);
+    next();
+});
 // POST /auth/login
 authRouter.post(
     '/login',
@@ -27,6 +30,7 @@ authRouter.post(
 
 
     async (req: RequestWithBody<LoginDto>, res: Response) => {
+        console.log('👉 Router mounted on path:', req.baseUrl, req.originalUrl);
         const {loginOrEmail, password} = req.body;
         const ip = req.ip || 'unknown';
         const title = (req.headers['user-agent'] as string) || 'Unknown device';
@@ -39,12 +43,18 @@ authRouter.post(
         }
 
         // ✅ Сначала cookie, потом тело
+        console.log('🔍 DEBUG login response:', {
+            accessToken: result.data.accessToken?.slice(0, 20),
+            refreshToken: result.data.refreshToken?.slice(0, 20)
+        });
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-        console.log('📤 Login OK | accessToken sent + refreshToken in cookie');
+        console.log('🔍 Set-Cookie header:', res.getHeaders()['set-cookie']);
 
-        return res.status(200).send(result.data.accessToken);
+        return res.status(200).send(result.data.accessToken)
     }
+
+
 );
 
 // POST /auth/registration-confirmation
@@ -174,12 +184,22 @@ authRouter.post(
             res.clearCookie(REFRESH_COOKIE_NAME);
             return res.sendStatus(401);
         }
-
+        console.log('🔍 [LOGIN] result.data:', {
+            accessToken: result.data?.accessToken?.slice(0,20),
+            refreshToken: result.data?.refreshToken?.slice(0,20)
+        });
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
-        console.log('🔄 Refresh SUCCESS');
+        console.log('🔍 [LOGIN] Sending response:', {
+            accessToken: result.data.accessToken?.slice(0,20),
+            refreshToken: result.data.refreshToken?.slice(0,20)
+        });
 
-        return res.status(200).json({ accessToken: result.data.accessToken });
+        return res.status(200).json({
+            accessToken: result.data.accessToken,
+            refreshToken: result.data.refreshToken,
+            result: { refreshToken: result.data.refreshToken }
+        });
     }
 );
 

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import {Request, Response, NextFunction} from 'express';
 
 interface RateLimitStore {
     [ip: string]: { count: number; resetTime: number }
@@ -11,14 +11,15 @@ const TIME_WINDOW = 10 * 1000; // 10 секунд
 
 export const rateLimiterMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || 'unknown';
+    const url = req.originalUrl || req.url;
+    const key = `${ip}:${url}`;
     const now = Date.now();
 
-    if (!store[ip]) {
-        store[ip] = { count: 1, resetTime: now + TIME_WINDOW };
+    if (!store[key]) {
+        store[key] = {count: 1, resetTime: now + TIME_WINDOW};
         return next();
     }
-
-    const record = store[ip];
+    const record = store[key];
 
 
     if (now >= record.resetTime) {

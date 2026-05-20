@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { appConfig} from "../../core/settings/config";
+import {appConfig} from "../../core/settings/config";
 
 export const nodemailerService = {
     async sendEmail(
@@ -8,7 +8,7 @@ export const nodemailerService = {
         template: (code: string) => string
     ): Promise<boolean> {
         let transporter = nodemailer.createTransport({
-          service: 'gmail',
+            service: 'gmail',
             secure: true,  // SSL
             auth: {
                 user: appConfig.EMAIL,
@@ -24,8 +24,8 @@ export const nodemailerService = {
         console.log('✅ Email sent successfully!');
         console.log('Message ID:', info.messageId);
         return true;
-    } ,
-    catch  (error: any) {
+    },
+    catch(error: any) {
         console.error('❌ Nodemailer ERROR:');
         console.error('Code:', error.code);
         console.error('Message:', error.message);

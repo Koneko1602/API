@@ -63,6 +63,7 @@ export const authService = {
 
         const newAccess = await jwtService.createToken(record.userId, record.deviceId);
         const newRefresh = await jwtService.createRefreshToken(record.userId, record.deviceId);
+        console.log('✅ authService.refreshTokens: newRefresh =', newRefresh.slice(0, 20));
 
         return {
             status: ResultStatus.Success,
