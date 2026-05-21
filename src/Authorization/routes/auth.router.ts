@@ -42,16 +42,13 @@ authRouter.post(
             return res.status(401).end();
         }
 
-        // ✅ Сначала cookie, потом тело
-        console.log('🔍 DEBUG login response:', {
-            accessToken: result.data.accessToken?.slice(0, 20),
-            refreshToken: result.data.refreshToken?.slice(0, 20)
-        });
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
         console.log('🔍 Set-Cookie header:', res.getHeaders()['set-cookie']);
 
-        return res.status(200).send(result.data.accessToken)
+        return res.status(200).json({
+            accessToken: result.data.accessToken});
+
     }
 
 
@@ -184,21 +181,15 @@ authRouter.post(
             res.clearCookie(REFRESH_COOKIE_NAME);
             return res.sendStatus(401);
         }
-        console.log('🔍 [LOGIN] result.data:', {
-            accessToken: result.data?.accessToken?.slice(0,20),
-            refreshToken: result.data?.refreshToken?.slice(0,20)
-        });
+
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
 
         console.log('🔍 [LOGIN] Sending response:', {
             accessToken: result.data.accessToken?.slice(0,20),
-            refreshToken: result.data.refreshToken?.slice(0,20)
-        });
 
+        });
         return res.status(200).json({
-            accessToken: result.data.accessToken,
-            refreshToken: result.data.refreshToken,
-            result: { refreshToken: result.data.refreshToken }
+            accessToken: result.data.accessToken
         });
     }
 );

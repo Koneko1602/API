@@ -4,7 +4,7 @@ export const REFRESH_COOKIE_NAME = 'refreshToken';
 
 export const REFRESH_COOKIE_OPTIONS: CookieOptions = {
     httpOnly: true,                    // защита от XSS
-    secure: false,  // в dev = false, в проде = true (HTTPS)
+    secure: true,  // в dev = false, в проде = true (HTTPS)
     sameSite: 'strict' as const,       // самый безопасный вариант против CSRF
 
     maxAge: 20 * 1000,                 // 20 секунд по Swagger
