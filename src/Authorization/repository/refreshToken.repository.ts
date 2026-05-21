@@ -21,7 +21,7 @@ export const refreshTokenRepository = {
         const deviceId = randomUUID();
         const refreshToken = await jwtService.createRefreshToken(userId, deviceId);
 
-        const expiresAt = new Date(Date.now() + 20 * 1000);
+        const expiresAt = new Date(Date.now() + 60 * 1000);
 
         await RefreshTokensCollection.insertOne({
             userId,

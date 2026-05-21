@@ -37,17 +37,17 @@ authRouter.post(
 
         const result = await authService.loginUser(loginOrEmail, password, ip, title);
 
-        if (result.status !== ResultStatus.Success || !result.data) {
+        if (result.status !== ResultStatus.Success || !result.data?.accessToken) {
             console.log('❌ Login failed');
             return res.status(401).end();
         }
 
         res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
+        const accessToken = result.data.accessToken;
+        console.log('📤 ACCESS TOKEN SENT | length:', accessToken.length);
 
-        console.log('🔍 Set-Cookie header:', res.getHeaders()['set-cookie']);
-
-        return res.status(200).json({
-            accessToken: result.data.accessToken});
+        res.set('Authorization', `Bearer ${accessToken}`);           // ← дополнительно
+        return res.status(200).send(accessToken);
 
     }
 

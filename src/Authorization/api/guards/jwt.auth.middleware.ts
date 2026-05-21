@@ -13,6 +13,7 @@ export const jwtAuthMiddleware = async (
     res: Response,
     next: NextFunction
 ) => {  // ← Убираем явный тип возврата!
+    console.log('🔍 Authorization header:', req.headers.authorization);
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.log('❌ JWT Middleware: No Bearer token');
