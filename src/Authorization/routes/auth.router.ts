@@ -11,8 +11,8 @@ import {createErrorsMessages} from "../../core/errors/FieldError";
 import {FieldError} from "../../core/errors/APIErrorResult";
 import {inputValidationAuthMiddleware} from "../../core/Middlewares/validation/validation-auth.middleware";
 import {REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS} from "../../core/settings/cookie.config";
-import {AuthenticatedRequest, jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
-import {rateLimiterMiddleware} from "../../core/Middlewares/rateLimiter.middleware";
+import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
+import {rateLimiterMiddleware} from "../../API/Middlewares/rateLimiter.middleware";
 
 
 export const authRouter = Router();
@@ -46,9 +46,9 @@ authRouter.post(
         const accessToken = result.data.accessToken;
         console.log('📤 ACCESS TOKEN SENT | length:', accessToken.length);
 
-        res.set('Authorization', `Bearer ${accessToken}`);           // ← дополнительно
-        return res.status(200).send(accessToken);
-
+        return res.status(200).json({
+            accessToken
+        });
     }
 
 

@@ -32,7 +32,7 @@ export const authService = {
         const deviceId = randomUUID();
 
         const accessToken = await jwtService.createToken(userId, deviceId);
-        const refreshToken = await refreshTokenRepository.create(userId, ip, title);
+        const refreshToken = await refreshTokenRepository.create(userId, deviceId, ip, title);
 
         console.log(`✅ authService.loginUser SUCCESS | userId=${userId} | deviceId=${deviceId} | accessToken=${accessToken.substring(0, 30)}...`);
 
@@ -71,7 +71,7 @@ export const authService = {
             extensions: [],
         };
     },
-    async logout(refreshToken: string): Promise<Result<null>> {
+    async logout(refreshToken: string): Promise<Result> {
         const record = await refreshTokenRepository.findValid(refreshToken);
         if (!record) {
             return {status: ResultStatus.Unauthorized, data: null, extensions: []};

@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { refreshTokenRepository } from '../repository/refreshToken.repository';
-import {AuthenticatedRequest, jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
+import {refreshTokenMiddleware} from "../../API/Middlewares/refreshToken.middleware";
 
 export const securityRouter = Router();
 
 // GET /security/devices — список всех активных сессий текущего пользователя
 securityRouter.get(
     '/devices',
-    jwtAuthMiddleware,
+    refreshTokenMiddleware,
     async (req: any, res: Response) => {
         try {
             const userId = req.userId;
@@ -32,7 +32,7 @@ securityRouter.get(
 // DELETE /security/devices — удалить все сессии кроме текущей
 securityRouter.delete(
     '/devices',
-    jwtAuthMiddleware,
+    refreshTokenMiddleware,
     async (req: any, res: Response) => {
         try {
             const userId = req.userId;
@@ -56,22 +56,30 @@ securityRouter.delete(
 // DELETE /security/devices/:deviceId — удалить конкретную сессию
 securityRouter.delete(
     '/devices/:deviceId',
-    jwtAuthMiddleware,
+    refreshTokenMiddleware,
     async (req:any, res: Response) => {
         try {
             const userId = req.userId;
             const { deviceId } = req.params;
 
             // ✅ Проверяем, существует ли сессия перед удалением
-            const token = await refreshTokenRepository.findByDeviceIdAndUserId(userId, deviceId);
+            const session =
+                await refreshTokenRepository.findByDeviceId(deviceId);
 
-            if (!token) {
-                return res.sendStatus(404);  // Not Found
+            if (!session) {
+                return res.sendStatus(404);
             }
 
-            // ✅ Удаляем только если найдена
-            await refreshTokenRepository.deleteByDeviceId(userId, deviceId);
-            res.sendStatus(204);
+            if (session.userId !== userId) {
+                return res.sendStatus(403);
+            }
+
+            await refreshTokenRepository.deleteByDeviceId(
+                userId,
+                deviceId
+            );
+
+            return res.sendStatus(204);
         } catch (error) {
             console.error('❌ Security DELETE /devices/:deviceId error:', error);
             res.sendStatus(500);

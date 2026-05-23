@@ -6,7 +6,7 @@ import {
     RefreshTokensCollection,
     UsersCollection
 } from "../../db/Mongo.db";
-import {clearRateLimiterStore} from "../../core/Middlewares/rateLimiter.middleware";
+import {clearRateLimiterStore} from "../../API/Middlewares/rateLimiter.middleware";
 
 export async function deleteAllDataHandler(req: Request, res: Response) {
 

@@ -17,11 +17,9 @@ export interface RefreshTokenDB {
 }
 
 export const refreshTokenRepository = {
-    async create(userId: string, ip: string, title: string): Promise<string> {
-        const deviceId = randomUUID();
+    async create(userId: string,deviceId:string, ip: string, title: string): Promise<string> {
         const refreshToken = await jwtService.createRefreshToken(userId, deviceId);
-
-        const expiresAt = new Date(Date.now() + 60 * 1000);
+        const expiresAt = new Date(Date.now() + 20 * 1000);
 
         await RefreshTokensCollection.insertOne({
             userId,
@@ -57,7 +55,9 @@ export const refreshTokenRepository = {
             userId: verified.userId
         });
     },
-
+    async findByDeviceId(deviceId: string) {
+        return RefreshTokensCollection.findOne({ deviceId });
+    },
     async deleteByUserId(userId: string): Promise<void> {
         await RefreshTokensCollection.deleteMany({ userId });
     },
