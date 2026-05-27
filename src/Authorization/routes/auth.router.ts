@@ -1,4 +1,4 @@
-import {Response, Router} from "express";
+import {Response, Router, Request} from "express";
 import {HttpStatus} from "../../core/types/http-statuses";
 import {userValidation} from "../../Users/validation/validation.user";
 import {inputValidationResultMiddleware} from "../../core/Middlewares/validation/input-validation-result.middleware";
@@ -10,149 +10,226 @@ import {body} from "express-validator";
 import {createErrorsMessages} from "../../core/errors/FieldError";
 import {FieldError} from "../../core/errors/APIErrorResult";
 import {inputValidationAuthMiddleware} from "../../core/Middlewares/validation/validation-auth.middleware";
+import {REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS} from "../../core/settings/cookie.config";
+import {jwtAuthMiddleware} from "../api/guards/jwt.auth.middleware";
+import {rateLimiterMiddleware} from "../../API/Middlewares/rateLimiter.middleware";
 
 
 export const authRouter = Router();
-
+authRouter.use((req, res, next) => {
+    console.log('🌐 Router hit:', req.method, req.originalUrl);
+    next();
+});
+// POST /auth/login
 authRouter.post(
     '/login',
+    rateLimiterMiddleware,
     userValidation.passwordValidation,
     userValidation.loginOrEmailValidation,
     inputValidationResultMiddleware,
 
+
     async (req: RequestWithBody<LoginDto>, res: Response) => {
+        console.log('👉 Router mounted on path:', req.baseUrl, req.originalUrl);
         const {loginOrEmail, password} = req.body;
+        const ip = req.ip || 'unknown';
+        const title = (req.headers['user-agent'] as string) || 'Unknown device';
 
-        // 1. Получаем Result объект
-        const result = await authService.loginUser(loginOrEmail, password);
+        const result = await authService.loginUser(loginOrEmail, password, ip, title);
 
-        // 2. Проверяем статус: если ошибка аутентификации
-        if (result.status === ResultStatus.Unauthorized) {
-
-            // Отправляем ожидаемый 401 статус
-            return res.status(HttpStatus.Unauthorized).end();
-
-
+        if (result.status !== ResultStatus.Success || !result.data?.accessToken) {
+            console.log('❌ Login failed');
+            return res.status(401).end();
         }
 
-        // 3. Если статус "Успех"
-        if (result.status === ResultStatus.Success) {
-            // Отправляем 200 OK и токен
-            return res.status(HttpStatus.Ok).send({accessToken: result.data!.accessToken});
+        res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
+        const accessToken = result.data.accessToken;
+        console.log('📤 ACCESS TOKEN SENT | length:', accessToken.length);
+
+        return res.status(200).json({
+            accessToken
+        });
+    }
+
+
+);
+
+// POST /auth/registration-confirmation
+authRouter.post(
+    '/registration-confirmation',
+    rateLimiterMiddleware,
+    body('code')
+        .trim()
+        .isString()
+        .notEmpty()
+        .withMessage('Code is required and must be a non-empty string'),
+
+    inputValidationResultMiddleware,
+
+    async (req: RequestWithBody<{ code: string }>, res: Response) => {
+        const {code} = req.body;
+
+        const result = await authService.confirmRegistration(code);
+
+        if (result.status !== ResultStatus.Success) {
+            let errors: FieldError[];
+
+            if (result.extensions && result.extensions.length > 0) {
+                errors = result.extensions.map(ext => ({
+                    message: ext.message,
+                    field: ext.field ?? 'code'
+                }));
+            } else {
+                errors = [{
+                    message: result.errorMessage || 'Invalid or expired confirmation code',
+                    field: 'code'
+                }];
+            }
+
+            return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors));
         }
 
-        // На всякий случай обрабатываем неожиданный статус
-        return res.sendStatus(HttpStatus.InternalServerError);
-    },
-    authRouter.post(
-        '/registration-confirmation',
-        // Валидация
-        body('code')
-            .trim()
-            .isString()
-            .notEmpty()
-            .withMessage('Code is required and must be a non-empty string'),
+        return res.sendStatus(HttpStatus.NoContent);
+    }
+);
 
-        // Общий middleware обработки ошибок валидации
-        inputValidationResultMiddleware,
+// POST /auth/registration
+authRouter.post(
+    '/registration',
+    rateLimiterMiddleware,
+    userValidation.loginValidation,
+    userValidation.passwordValidation,
+    userValidation.emailValidation,
+    inputValidationAuthMiddleware,
 
-        // Основная логика
-        async (req: RequestWithBody<{ code: string }>, res: Response) => {
-            const {code} = req.body;
 
-            const result = await authService.confirmRegistration(code);
+    async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
+        const {login, password, email} = req.body;
 
-            if (result.status !== ResultStatus.Success) {
-                // Правильно формируем массив ошибок
-                let errors: FieldError[];
+        console.log('[REG ROUTER] Received body:', req.body);
+        const result = await authService.registerUser(login, password, email);
+        console.log('[REG ROUTER] Service result status:', result.status);
 
-                if (result.extensions && result.extensions.length > 0) {
-                    // Если есть extensions — преобразуем их, заменяя null на 'code'
-                    errors = result.extensions.map(ext => ({
-                        message: ext.message,
-                        field: ext.field ?? 'code'  // ← ext объявлен как параметр map
-                    }));
-                } else {
-                    // Если extensions пустой или null — создаём fallback ошибку
-                    errors = [{
-                        message: result.errorMessage || 'Invalid or expired confirmation code',
-                        field: 'code'
-                    }];
-                }
+        if (result.status !== ResultStatus.Success) {
+            const safeErrors: FieldError[] = (result.extensions || []).map(ext => ({
+                message: ext.message,
+                field: ext.field ?? 'general'
+            }));
 
-                return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors));
+            if (safeErrors.length === 0) {
+                safeErrors.push({
+                    message: result.errorMessage || 'Registration failed (duplicate or invalid data)',
+                    field: 'general'
+                });
             }
 
-            return res.sendStatus(HttpStatus.NoContent); // 204
-        },
+            return res.status(HttpStatus.BadRequest).json(createErrorsMessages(safeErrors));
+        }
 
-        authRouter.post(
-            '/registration',
-            // Валидация (используем твои из userValidation)
-            userValidation.loginValidation,    // Проверяет дубликат login
-            userValidation.passwordValidation,
-            userValidation.emailValidation,    // Проверяет дубликат email
-            inputValidationAuthMiddleware,
+        return res.sendStatus(HttpStatus.NoContent);
+    }
+);
 
-            async (req: RequestWithBody<{ login: string, password: string, email: string }>, res: Response) => {
-                const { login, password, email } = req.body;
-                console.log('[REG ROUTER] Received body:', req.body);
-                const result = await authService.registerUser(login, password, email);
-                console.log('[REG ROUTER] Service result status:', result.status);
-                if (result.status !== ResultStatus.Success) {
-                    // Преобразование extensions, чтобы field был всегда string
-                    const safeErrors: FieldError[] = (result.extensions || []).map(ext => ({
-                        message: ext.message,
-                        field: ext.field ?? 'general'  // Заменяем null на 'general' (или 'code')
-                    }));
+// POST /auth/registration-email-resending
+authRouter.post(
+    '/registration-email-resending',
+    rateLimiterMiddleware,
+    userValidation.emailValidation,
+    inputValidationResultMiddleware,
 
-                    // Если extensions пустой — fallback ошибка
-                    if (safeErrors.length === 0) {
-                        safeErrors.push({
-                            message: result.errorMessage || 'Registration failed (duplicate or invalid data)',
-                            field: 'general'
-                        });
-                    }
+    async (req: RequestWithBody<{ email: string }>, res: Response) => {
+        const {email} = req.body;
 
-                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(safeErrors));
-                }
-                if (result.status === ResultStatus.Success){
-                    return res.sendStatus(HttpStatus.NoContent);
-                }
-                console.log('[REG ROUTER] Returning 204');
-                return res.sendStatus(HttpStatus.NoContent);  // 204
-            }
-        ),
-        authRouter.post(
-            '/registration-email-resending',
-            // Валидация — используем твою emailValidation (проверяет формат и существование, но для ресенда мы проверяем, что email НЕ подтверждён — это в сервисе)
-            userValidation.emailValidation,  // Проверяет формат email и существование (но в сервисе добавим логику, что если уже подтверждён — ошибка)
+        console.log('[RESEND/CONFIRM] Received:', req.body);
 
-            // Middleware обработки ошибок валидации
-            inputValidationResultMiddleware,
+        const result = await authService.resendConfirmationEmail(email);
 
-            // Основная логика
-            async (req: RequestWithBody<{ email: string }>, res: Response) => {
-                const {email} = req.body;
-                console.log('[RESEND/CONFIRM] Received:', req.body);
-                const result = await authService.resendConfirmationEmail(email);
-                console.log('[RESEND/CONFIRM] Received:', req.body);
-                if (result.status !== ResultStatus.Success) {
-                    const errors = result.extensions.length > 0
-                        ? result.extensions.map(ext => ({
-                            message: ext.message,
-                            field: ext.field ?? 'email'
-                        }))
-                        : [{
-                            field: 'email',
-                            message: result.errorMessage || 'Email not found or already confirmed'
-                        }];
+        if (result.status !== ResultStatus.Success) {
+            const errors = result.extensions.length > 0
+                ? result.extensions.map(ext => ({
+                    message: ext.message,
+                    field: ext.field ?? 'email'
+                }))
+                : [{
+                    field: 'email',
+                    message: result.errorMessage || 'Email not found or already confirmed'
+                }];
 
-                    return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
-                }
+            return res.status(HttpStatus.BadRequest).json(createErrorsMessages(errors as FieldError[]));
+        }
 
-                return res.sendStatus(HttpStatus.NoContent);  // 204
-            }
-        )
-    )
-)
+        return res.sendStatus(HttpStatus.NoContent);
+    }
+);
+
+// POST /auth/refresh-token
+authRouter.post(
+    '/refresh-token',
+    async (req: Request, res: Response) => {
+        const oldRefresh = req.cookies[REFRESH_COOKIE_NAME];
+
+        if (!oldRefresh) {
+            console.log('❌ Refresh: no cookie');
+            return res.sendStatus(401);
+        }
+
+        const ip = req.ip || 'unknown';
+        const result = await authService.refreshTokens(oldRefresh, ip);
+
+        if (result.status !== ResultStatus.Success || !result.data) {
+            console.log('❌ Refresh failed');
+            res.clearCookie(REFRESH_COOKIE_NAME);
+            return res.sendStatus(401);
+        }
+
+        res.cookie(REFRESH_COOKIE_NAME, result.data.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+        console.log('🔍 [LOGIN] Sending response:', {
+            accessToken: result.data.accessToken?.slice(0,20),
+
+        });
+        return res.status(200).json({
+            accessToken: result.data.accessToken
+        });
+    }
+);
+
+// POST /auth/logout
+authRouter.post(
+    '/logout',
+    async (req: Request, res: Response) => {
+        const refresh = req.cookies?.[REFRESH_COOKIE_NAME];
+
+        if (!refresh) {
+            return res.sendStatus(HttpStatus.Unauthorized);
+        }
+
+        const result = await authService.logout(refresh);
+
+        // ✅ Всегда очищаем куку
+        res.clearCookie(REFRESH_COOKIE_NAME);
+
+        if (result.status !== ResultStatus.Success) {
+            return res.sendStatus(HttpStatus.Unauthorized);
+        }
+
+        res.sendStatus(HttpStatus.NoContent);
+    }
+);
+
+// GET /auth/me
+authRouter.get(
+    '/me',
+    jwtAuthMiddleware,
+    async (req: any, res: Response) => {  // ✅ Правильная типизация
+        const userId = req.userId;
+
+        const result = await authService.getCurrentUser(userId);
+
+        if (result.status !== ResultStatus.Success || !result.data) {
+            return res.sendStatus(401);
+        }
+
+        res.status(200).json(result.data);
+    }
+);

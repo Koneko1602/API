@@ -1,8 +1,13 @@
-//index.d.ts
+
+import { Request } from 'express';
+
 declare global {
     namespace Express {
-        export interface Request {
-            userId: string | null
+        interface Request {
+            userId: string | null;
+
+            // cookies от cookie-parser
+            cookies: Record<string, string | undefined>;
         }
     }
 }

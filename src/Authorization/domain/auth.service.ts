@@ -9,96 +9,107 @@ import {randomUUID} from "node:crypto";
 import {nodemailerService} from "../adapters/nodemailer.service";
 import {emailExamples} from "../adapters/emailExamples";
 import {add} from "date-fns/add";
-import {UsersCollection} from "../../db/Mongo.db";
+import {RefreshTokensCollection, UsersCollection} from "../../db/Mongo.db";
+import {refreshTokenRepository} from "../repository/refreshToken.repository";
 
 export const authService = {
 
-    // async loginUser(
-    //     loginOrEmail: string,
-    //     password: string,
-    // ): Promise<Result<{ accessToken: string } | null>> {
-    //     const result = await this.checkUserCredentials(loginOrEmail, password);
-    //     if (result.status !== ResultStatus.Success)
-    //         return {
-    //             status: ResultStatus.Unauthorized,
-    //             errorMessage: 'Unauthorized',
-    //             extensions: [{field: 'loginOrEmail', message: 'Wrong credentials'}],
-    //             data: null,
-    //         };
-    //
-    //     const accessToken = await jwtService.createToken(result.data!._id.toString());
-    //
-    //     return {
-    //         status: ResultStatus.Success,
-    //         data: {accessToken},
-    //         extensions: [],
-    //     };
-    // },
+
     async loginUser(
         loginOrEmail: string,
         password: string,
+        ip: string,
+        title: string
     ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+
         const check = await this.checkUserCredentials(loginOrEmail, password);
         if (check.status !== ResultStatus.Success) {
-            return {
-                status: ResultStatus.Unauthorized,
-                data: null,
-                extensions: [{ field: 'credentials', message: 'Wrong login or password' }],
-            };
+            console.log(`❌ Credentials check failed for ${loginOrEmail}`);
+            return {status: ResultStatus.Unauthorized, data: null, extensions: []};
         }
 
         const userId = check.data!._id.toString();
+        const deviceId = randomUUID();
 
-        const accessToken = await jwtService.createToken(userId);
-        const refreshToken = randomUUID(); // или randomBytes(32).toString('hex')
+        const accessToken = await jwtService.createToken(userId, deviceId);
+        const refreshToken = await refreshTokenRepository.create(userId, deviceId, ip, title);
 
-        // Сохраняем refresh в БД
-        await refreshTokenRepository.create({
-            userId,
-            token: refreshToken,
-            expiresAt: addSeconds(new Date(), 20),
-        });
+        console.log(`✅ authService.loginUser SUCCESS | userId=${userId} | deviceId=${deviceId} | accessToken=${accessToken.substring(0, 30)}...`);
 
         return {
             status: ResultStatus.Success,
-            data: { accessToken, refreshToken },
+            data: {accessToken, refreshToken},
+            extensions: [],
         };
     },
+    // Сохраняем refresh в БД
+    async refreshTokens(
+        oldRefreshToken: string,
+        ip: string
+    ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
 
-    async refresh(refreshToken: string): Promise<Result<{ accessToken: string; newRefreshToken: string } | null>> {
-        const tokenRecord = await refreshTokenRepository.findValidByToken(refreshToken);
+        const record =
+            await refreshTokenRepository.findValid(oldRefreshToken);
 
-        if (!tokenRecord) {
-            return { status: ResultStatus.Unauthorized, data: null };
+        if (!record) {
+            return {
+                status: ResultStatus.Unauthorized,
+                data: null,
+                extensions: []
+            };
         }
 
-        // Инвалидируем старый (удаляем)
-        await refreshTokenRepository.deleteById(tokenRecord._id.toString());
+        // УДАЛЯЕМ старый refresh
+        await refreshTokenRepository.deleteByToken(oldRefreshToken);
 
-        const userId = tokenRecord.userId;
+        // СОЗДАЕМ новый refresh
+        const newRefresh =
+            await jwtService.createRefreshToken(
+                record.userId,
+                record.deviceId
+            );
 
-        const newAccess = await jwtService.createToken(userId);
-        const newRefresh = randomUUID();
-
-        await refreshTokenRepository.create({
-            userId,
+        await RefreshTokensCollection.insertOne({
+            userId: record.userId,
+            deviceId: record.deviceId,
+            title: record.title,
+            ip,
+            lastActiveDate: new Date(),
+            expiresAt: new Date(Date.now() + 20 * 1000),
+            createdAt: new Date(),
             token: newRefresh,
-            expiresAt: addSeconds(new Date(), 20),
         });
+
+        const newAccess =
+            await jwtService.createToken(
+                record.userId,
+                record.deviceId
+            );
 
         return {
             status: ResultStatus.Success,
-            data: { accessToken: newAccess, newRefreshToken: newRefresh },
+            data: {
+                accessToken: newAccess,
+                refreshToken: newRefresh
+            },
+            extensions: [],
         };
     },
+    async logout(refreshToken: string): Promise<Result> {
+        const record = await refreshTokenRepository.findValid(refreshToken);
+        if (!record) {
+            return {status: ResultStatus.Unauthorized, data: null, extensions: []};
+        }
 
-    async logout(refreshToken: string): Promise<void> {
         await refreshTokenRepository.deleteByToken(refreshToken);
+        return {status: ResultStatus.Success, data: null, extensions: []};
     },
 
-    async getMe(userId: string): Promise<Result<{ userId: string; login: string; email: string } | null>> {
+    async getCurrentUser(userId: string): Promise<Result<{ userId: string; login: string; email: string } | null>> {
         const user = await usersRepository.findById(userId);
-        if (!user) return { status: ResultStatus.NotFound, data: null };
+        if (!user) {
+            return {status: ResultStatus.NotFound, data: null, extensions: []};
+        }
 
         return {
             status: ResultStatus.Success,
@@ -107,31 +118,34 @@ export const authService = {
                 login: user.login,
                 email: user.email,
             },
+            extensions: [],
         };
     },
-};
 
-    async checkUserCredentials(
-        loginOrEmail: string,
-        password: string,
+
+    async checkUserCredentials(loginOrEmail: string, password: string
     ): Promise<Result<WithId<IUserDB> | null>> {
         const user = await usersRepository.findByLoginOrEmail(loginOrEmail);
-        if (!user)
+
+        if (!user) {
             return {
                 status: ResultStatus.NotFound,
                 data: null,
                 errorMessage: 'Not Found',
                 extensions: [{field: 'loginOrEmail', message: 'Not Found'}],
             };
+        }
 
         const isPassCorrect = await bcryptService.checkPassword(password, user.passwordHash);
-        if (!isPassCorrect)
+
+        if (!isPassCorrect) {
             return {
                 status: ResultStatus.BadRequest,
                 data: null,
                 errorMessage: 'Bad Request',
                 extensions: [{field: 'password', message: 'Wrong password'}],
             };
+        }
 
         return {
             status: ResultStatus.Success,
@@ -140,20 +154,19 @@ export const authService = {
         };
     },
 
-
     async registerUser(login: string, pass: string, email: string): Promise<Result<string | null>> {
-       // Проверяем login и email ПО ОТДЕЛЬНОСТИ
-        const existingLogin = await UsersCollection.findOne({ login: login.trim() });
-        const existingEmail = await UsersCollection.findOne({ email: email.trim() });
+        // Проверяем login и email ПО ОТДЕЛЬНОСТИ
+        const existingLogin = await UsersCollection.findOne({login: login.trim()});
+        const existingEmail = await UsersCollection.findOne({email: email.trim()});
 
         if (existingLogin || existingEmail) {
             console.log('[SERVICE-REG] DUPLICATE FOUND → returning null');
             const errors = [];
             if (existingLogin) {
-                errors.push({ field: 'login', message: 'Login already exists' });
+                errors.push({field: 'login', message: 'Login already exists'});
             }
             if (existingEmail) {
-                errors.push({ field: 'email', message: 'Email already exists' });
+                errors.push({field: 'email', message: 'Email already exists'});
             }
 
             return {
@@ -173,7 +186,7 @@ export const authService = {
             createdAt: new Date(),
             emailConfirmation: {
                 confirmationCode,
-                expirationDate: add(new Date(), { hours: 1, minutes: 30 }),
+                expirationDate: add(new Date(), {hours: 1, minutes: 30}),
                 isConfirmed: false
             }
         };
@@ -197,7 +210,7 @@ export const authService = {
         if (!user) {
             return {
                 status: ResultStatus.BadRequest,
-                extensions: [{ field: 'code', message: 'User not found' }],
+                extensions: [{field: 'code', message: 'User not found'}],
                 data: null
             };
         }
@@ -209,7 +222,7 @@ export const authService = {
         if (user.emailConfirmation.isConfirmed || isExpired) {
             return {
                 status: ResultStatus.BadRequest,
-                extensions: [{ field: 'code', message: 'Invalid, expired or already used' }],
+                extensions: [{field: 'code', message: 'Invalid, expired or already used'}],
                 data: null
             };
         }
@@ -241,7 +254,7 @@ export const authService = {
             console.log('[RESEND] User not found → 400');
             return {
                 status: ResultStatus.BadRequest,
-                extensions: [{ field: 'email', message: 'Email not found' }],
+                extensions: [{field: 'email', message: 'Email not found'}],
                 data: null
             };
         }
@@ -250,13 +263,13 @@ export const authService = {
             console.log('[RESEND] Email already confirmed → 400');
             return {
                 status: ResultStatus.BadRequest,
-                extensions: [{ field: 'email', message: 'Email already confirmed' }],
+                extensions: [{field: 'email', message: 'Email already confirmed'}],
                 data: null
             };
         }
         console.log('[RESEND] User exists and not confirmed → resending');
         const newCode = randomUUID();
-        const newExpiration = add(new Date(), { hours: 1, minutes: 30 });
+        const newExpiration = add(new Date(), {hours: 1, minutes: 30});
 
         const updated = await usersRepository.updateConfirmation(user._id.toString(), {
             confirmationCode: newCode,
