@@ -43,31 +43,55 @@ export const authService = {
         };
     },
     // Сохраняем refresh в БД
-    async refreshTokens(oldRefreshToken: string, ip: string): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
-        const record = await refreshTokenRepository.findValid(oldRefreshToken);
+    async refreshTokens(
+        oldRefreshToken: string,
+        ip: string
+    ): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+
+        const record =
+            await refreshTokenRepository.findValid(oldRefreshToken);
 
         if (!record) {
-            return { status: ResultStatus.Unauthorized, data: null, extensions: [] };
+            return {
+                status: ResultStatus.Unauthorized,
+                data: null,
+                extensions: []
+            };
         }
 
-        await RefreshTokensCollection.updateOne(
-            { _id: record._id },
-            {
-                $set: {
-                    lastActiveDate: new Date(),
-                    ip: ip,
-                    expiresAt: new Date(Date.now() + 20 * 1000)
-                }
-            }
-        );
+        // УДАЛЯЕМ старый refresh
+        await refreshTokenRepository.deleteByToken(oldRefreshToken);
 
-        const newAccess = await jwtService.createToken(record.userId, record.deviceId);
-        const newRefresh = await jwtService.createRefreshToken(record.userId, record.deviceId);
-        console.log('✅ authService.refreshTokens: newRefresh =', newRefresh.slice(0, 20));
+        // СОЗДАЕМ новый refresh
+        const newRefresh =
+            await jwtService.createRefreshToken(
+                record.userId,
+                record.deviceId
+            );
+
+        await RefreshTokensCollection.insertOne({
+            userId: record.userId,
+            deviceId: record.deviceId,
+            title: record.title,
+            ip,
+            lastActiveDate: new Date(),
+            expiresAt: new Date(Date.now() + 20 * 1000),
+            createdAt: new Date(),
+            token: newRefresh,
+        });
+
+        const newAccess =
+            await jwtService.createToken(
+                record.userId,
+                record.deviceId
+            );
 
         return {
             status: ResultStatus.Success,
-            data: { accessToken: newAccess, refreshToken: newRefresh },
+            data: {
+                accessToken: newAccess,
+                refreshToken: newRefresh
+            },
             extensions: [],
         };
     },

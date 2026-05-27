@@ -14,6 +14,7 @@ export interface RefreshTokenDB {
     lastActiveDate: Date;
     expiresAt: Date;
     createdAt: Date;
+    token: string;
 }
 
 export const refreshTokenRepository = {
@@ -29,6 +30,8 @@ export const refreshTokenRepository = {
             lastActiveDate: new Date(),
             expiresAt,
             createdAt: new Date(),
+            token:refreshToken,
+
         });
 
         return refreshToken;
@@ -39,6 +42,7 @@ export const refreshTokenRepository = {
         if (!verified?.deviceId || !verified?.userId) return null;
 
         return RefreshTokensCollection.findOne({
+            token,
             deviceId: verified.deviceId,
             userId: verified.userId,
             expiresAt: { $gt: new Date() },
@@ -51,8 +55,7 @@ export const refreshTokenRepository = {
         if (!verified?.deviceId || !verified?.userId) return;
 
         await RefreshTokensCollection.deleteOne({
-            deviceId: verified.deviceId,
-            userId: verified.userId
+           token,
         });
     },
     async findByDeviceId(deviceId: string) {
