@@ -30,6 +30,9 @@ export const usersRepository = {
     async findByConfirmationCode(code: string): Promise<WithId<IUserDB> | null> {
         return UsersCollection.findOne({ "emailConfirmation.confirmationCode": code });
     },
+    async findByRecoveryCode(code: string): Promise<WithId<IUserDB> | null> {
+        return UsersCollection.findOne({ "passwordRecovery.recoveryCode": code });
+    },
     async updateConfirmation(id: string, confirmationData: Partial<IUserDB['emailConfirmation']>): Promise<boolean> {
         const result = await UsersCollection.updateOne(
             { _id: new ObjectId(id) },
@@ -38,6 +41,26 @@ export const usersRepository = {
                     "emailConfirmation.isConfirmed": confirmationData.isConfirmed } }
         );
         return result.matchedCount === 1;
+    },
+    async updatePasswordRecovery(id: string, recoveryData: {recoveryCode: string, recoveryExpirationDate: Date}): Promise<boolean> {
+        const result = await UsersCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { 
+                "passwordRecovery.recoveryCode": recoveryData.recoveryCode,
+                "passwordRecovery.recoveryExpirationDate": recoveryData.recoveryExpirationDate
+            } }
+        );
+        return result.matchedCount === 1;
+    },
+    async updatePassword(id: string, passwordData: {passwordHash: string, recoveryCode: null, recoveryExpirationDate: null}): Promise<boolean> {
+        const result = await UsersCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { 
+                "passwordHash": passwordData.passwordHash,
+                "passwordRecovery.recoveryCode": passwordData.recoveryCode,
+                "passwordRecovery.recoveryExpirationDate": passwordData.recoveryExpirationDate
+            } }
+        );
+        return result.matchedCount === 1;
     }
-
 };
