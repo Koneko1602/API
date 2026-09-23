@@ -296,7 +296,57 @@ export const authService = {
             extensions: [],
             data: null
         };
-    }
+    },
+    async sendPasswordRecoveryCode(email: string): Promise<Result<null>> {
+        console.log('[PASSWORD-RECOVERY] Service called for email:', email);
 
+        // 1. Ищем пользователя в базе по email
+        const user = await usersRepository.findByEmail(email);
 
+        // По ТЗ, если пользователя нет, мы все равно возвращаем Success (204),
+        // чтобы злоумышленники не могли сканировать базу на наличие email-адресов.
+        if (!user) {
+            console.log('[PASSWORD-RECOVERY] User not found, but returning success for security');
+            return {
+                status: ResultStatus.Success,
+                extensions: [],
+                data: null
+            };
+        }
+
+        // 2. Генерируем код восстановления и ставим срок жизни (например, 20 минут)
+        const recoveryCode = randomUUID();
+        const expirationDate = add(new Date(), { minutes: 20 });
+
+        // 3. Сохраняем код в БД к пользователю.
+        // ВНИМАНИЕ: Если у вас в схеме IUserDB еще нет поля passwordRecovery,
+        // убедитесь, что ваш репозиторий или коллекция UsersCollection обновят документ.
+        await UsersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    'passwordRecovery.recoveryCode': recoveryCode,
+                    'passwordRecovery.expirationDate': expirationDate
+                }
+            }
+        );
+
+        // 4. Отправляем письмо с использованием вашего шаблона
+        try {
+            await nodemailerService.sendEmail(
+                user.email,
+                recoveryCode,
+                emailExamples.passwordRecoveryEmail
+            );
+            console.log('[PASSWORD-RECOVERY] Recovery email sent successfully');
+        } catch (e: unknown) {
+            console.error('[PASSWORD-RECOVERY] Send email error', e);
+        }
+
+        return {
+            status: ResultStatus.Success,
+            extensions: [],
+            data: null
+        };
+    },
 };

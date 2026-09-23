@@ -231,5 +231,29 @@ authRouter.get(
         }
 
         res.status(200).json(result.data);
-    }
-);
+    },
+    // POST /auth/password-recovery
+    authRouter.post(
+        '/password-recovery',
+        rateLimiterMiddleware,
+        userValidation.emailValidation,
+        inputValidationResultMiddleware,
+
+        async (req: RequestWithBody<{ email: string }>, res: Response) => {
+            const { email } = req.body;
+
+            console.log('[PASSWORD-RECOVERY] Received email:', email);
+
+            // Вызываем метод вашего сервиса для отправки кода восстановления
+            const result = await authService.sendPasswordRecoveryCode(email);
+
+            // По ТЗ инкубатора, даже если email не найден, мы ВСЕГДА возвращаем 204 (NoContent),
+            // чтобы злоумышленники не могли перебирать существующие email в базе.
+            if (result.status !== ResultStatus.Success) {
+                console.log('[PASSWORD-RECOVERY] Service status is not Success, but sending 204 for security');
+                return res.sendStatus(HttpStatus.NoContent);
+            }
+
+            return res.sendStatus(HttpStatus.NoContent);
+        }
+    ));
