@@ -221,7 +221,7 @@ authRouter.post(
 authRouter.get(
     '/me',
     jwtAuthMiddleware,
-    async (req: any, res: Response) => {  // ✅ Правильная типизация
+    async (req: any, res: Response) => {
         const userId = req.userId;
 
         const result = await authService.getCurrentUser(userId);
@@ -231,29 +231,69 @@ authRouter.get(
         }
 
         res.status(200).json(result.data);
-    },
-    // POST /auth/password-recovery
-    authRouter.post(
-        '/password-recovery',
-        rateLimiterMiddleware,
-        userValidation.emailValidation,
-        inputValidationResultMiddleware,
+    }
+);
 
-        async (req: RequestWithBody<{ email: string }>, res: Response) => {
-            const { email } = req.body;
+// POST /auth/password-recovery
+authRouter.post(
+    '/password-recovery',
+    rateLimiterMiddleware,
+    userValidation.emailValidation,
+    inputValidationResultMiddleware,
+    async (req: RequestWithBody<{ email: string }>, res: Response) => {
+        const { email } = req.body;
 
-            console.log('[PASSWORD-RECOVERY] Received email:', email);
+        console.log('[PASSWORD-RECOVERY] Received email:', email);
 
-            // Вызываем метод вашего сервиса для отправки кода восстановления
-            const result = await authService.sendPasswordRecoveryCode(email);
+        await authService.sendPasswordRecoveryCode(email);
 
-            // По ТЗ инкубатора, даже если email не найден, мы ВСЕГДА возвращаем 204 (NoContent),
-            // чтобы злоумышленники не могли перебирать существующие email в базе.
-            if (result.status !== ResultStatus.Success) {
-                console.log('[PASSWORD-RECOVERY] Service status is not Success, but sending 204 for security');
-                return res.sendStatus(HttpStatus.NoContent);
-            }
+        // По ТЗ всегда 204, даже если email не найден
+        return res.sendStatus(HttpStatus.NoContent);
+    }
+);
 
-            return res.sendStatus(HttpStatus.NoContent);
+// POST /auth/new-password
+authRouter.post(
+    '/new-password',
+    rateLimiterMiddleware,
+    body('newPassword')
+        .isString()
+        .trim()
+        .isLength({ min: 6, max: 20 })
+        .withMessage('Password length should be from 6 to 20'),
+    body('recoveryCode')
+        .isString()
+        .trim()
+        .notEmpty()
+        .withMessage('Recovery code is required'),
+    inputValidationResultMiddleware,
+    async (
+        req: RequestWithBody<{ newPassword: string; recoveryCode: string }>,
+        res: Response
+    ) => {
+        const { newPassword, recoveryCode } = req.body;
+
+        const result = await authService.newPassword(newPassword, recoveryCode);
+
+        if (result.status !== ResultStatus.Success) {
+            const errors: FieldError[] =
+                result.extensions?.length > 0
+                    ? result.extensions.map((ext) => ({
+                        message: ext.message,
+                        field: ext.field ?? 'recoveryCode',
+                    }))
+                    : [
+                        {
+                            message: 'Incorrect recovery code',
+                            field: 'recoveryCode',
+                        },
+                    ];
+
+            return res
+                .status(HttpStatus.BadRequest)
+                .json(createErrorsMessages(errors));
         }
-    ));
+
+        return res.sendStatus(HttpStatus.NoContent);
+    }
+    );

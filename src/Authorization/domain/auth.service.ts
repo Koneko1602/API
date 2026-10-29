@@ -349,4 +349,48 @@ export const authService = {
             data: null
         };
     },
+    async newPassword(newPassword: string, recoveryCode: string): Promise<Result<null>> {
+        const user = await UsersCollection.findOne({
+            'passwordRecovery.recoveryCode': recoveryCode,
+        });
+
+        if (!user) {
+            return {
+                status: ResultStatus.BadRequest,
+                extensions: [{ field: 'recoveryCode', message: 'Incorrect recovery code' }],
+                data: null,
+            };
+        }
+
+        const isExpired =
+            !user.passwordRecovery?.expirationDate ||
+            user.passwordRecovery.expirationDate < new Date();
+
+        if (isExpired) {
+            return {
+                status: ResultStatus.BadRequest,
+                extensions: [{ field: 'recoveryCode', message: 'Recovery code is expired' }],
+                data: null,
+            };
+        }
+
+        const passwordHash = await bcryptService.generateHash(newPassword);
+
+        await UsersCollection.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    passwordHash,
+                    'passwordRecovery.recoveryCode': null,
+                    'passwordRecovery.expirationDate': null,
+                },
+            }
+        );
+
+        return {
+            status: ResultStatus.Success,
+            extensions: [],
+            data: null,
+        };
+    },
 };
