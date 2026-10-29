@@ -11,7 +11,9 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
   "exclude": ["__tests__", "dist", "node_modules"],
   "files": [
     "src/index.d.ts"

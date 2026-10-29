@@ -7,5 +7,11 @@ yarn-debug.log*
 yarn-error.log*
 /.pnp
 .pnp.js
+dist/
+
 
 .vscode/*
+# Environment variables
+.env
+.env.*
+!.env.example
